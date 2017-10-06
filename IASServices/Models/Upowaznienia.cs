@@ -10,7 +10,7 @@ namespace IASServices.Models
         public string Nazwa { get; set; }
         public string Nazwa_skrocona { get; set; }
         public string Wniosek_nadania_upr { get; set; }
-        public string Nadający_upr { get; set; }
+        public string Nadajacy_upr { get; set; }
         public string Prowadzacy_rejestr_uzyt { get; set; }
         public string Wniosek_odebrania_upr { get; set; }
         public string Odbierajacy_upr { get; set; }

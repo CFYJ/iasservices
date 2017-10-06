@@ -31,7 +31,7 @@ namespace IASServices.Models
                    .HasColumnName("wniosek_nadania_upr")
                    .HasColumnType("varchar(150)");
 
-                entity.Property(e => e.Nadający_upr)
+                entity.Property(e => e.Nadajacy_upr)
                    .HasColumnName("nadajacy_upr")
                    .HasColumnType("varchar(150)");
 

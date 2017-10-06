@@ -23,6 +23,13 @@ namespace IASServices.Controllers
             _context = context;
         }
 
+        [HttpGet]
+        public async Task<IEnumerable<Upowaznienia>> GetUpowaznieniaLista()
+        {
+            //var queryString = HttpContext.Request.Query;
+            return await _context.Upowaznienia.ToListAsync();
+        }
+
         [HttpGet("{id}")]
         public async Task<IActionResult> GetUpowaznienia([FromRoute] long id)
         {
@@ -41,12 +48,12 @@ namespace IASServices.Controllers
             return Ok(upowaznienia);
         }
 
-        [HttpGet]
-        public async Task<IEnumerable<Kontakty>> GetKontakty()
-        {
-            //var queryString = HttpContext.Request.Query;
-            return await (new IASServices.Models.KontaktyContext(null)).Kontakty.ToListAsync();
-        }
+        //[HttpGet]
+        //public async Task<IEnumerable<Upowaznienia>> GetUpowaznieniaLista()
+        //{
+        //    //var queryString = HttpContext.Request.Query;
+        //    return await (new IASServices.Models.UpowaznieniaContext(null)).Upowaznienia.ToListAsync();
+        //}
 
         // GET: api/Kontakties/5
         [HttpGet("{id}")]
