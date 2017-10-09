@@ -48,6 +48,60 @@ namespace IASServices.Controllers
             return Ok(upowaznienia);
         }
 
+        // POST: api/Kontakties
+        [HttpPost]
+        public async Task<IActionResult> PostUpowaznienia([FromBody] Upowaznienia upowaznienia)
+        {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
+            _context.Upowaznienia.Add(upowaznienia);
+            await _context.SaveChangesAsync();
+
+            return CreatedAtAction("GetUpowaznienia", new { id = upowaznienia.Id }, upowaznienia);
+        }
+
+
+        // PUT: api/Kontakties/5
+        [HttpPut("{id}")]
+        public async Task<IActionResult> PutUpowaznienia([FromRoute] long id, [FromBody] Upowaznienia upowaznienia)
+        {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
+            if (id != upowaznienia.Id)
+            {
+                return BadRequest();
+            }
+
+            _context.Entry(upowaznienia).State = EntityState.Modified;
+
+            try
+            {
+                await _context.SaveChangesAsync();
+            }
+            catch (DbUpdateConcurrencyException)
+            {
+                if (!UpowaznieniaExists(id))
+                {
+                    return NotFound();
+                }
+                else
+                {
+                    throw;
+                }
+            }
+
+            return NoContent();
+        }
+        private bool UpowaznieniaExists(long id)
+           => _context.Upowaznienia.Any(e => e.Id == id);
+
+
         //[HttpGet]
         //public async Task<IEnumerable<Upowaznienia>> GetUpowaznieniaLista()
         //{
@@ -55,24 +109,7 @@ namespace IASServices.Controllers
         //    return await (new IASServices.Models.UpowaznieniaContext(null)).Upowaznienia.ToListAsync();
         //}
 
-        // GET: api/Kontakties/5
-        [HttpGet("{id}")]
-        public async Task<IActionResult> GetKontakty([FromRoute] long id)
-        {
-            if (!ModelState.IsValid)
-            {
-                return BadRequest(ModelState);
-            }
 
-            var kontakty = await (new IASServices.Models.KontaktyContext(null)).Kontakty.SingleOrDefaultAsync(m => m.Id == id);
-
-            if (kontakty == null)
-            {
-                return NotFound();
-            }
-
-            return Ok(kontakty);
-        }
 
     }
 }
