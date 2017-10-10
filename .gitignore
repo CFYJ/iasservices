@@ -260,3 +260,7 @@ paket-files/
 __pycache__/
 *.pyc
 IASServices/appsettings.json
+IASServices/app.config
+IASServices/Properties/launchSettings.json
+IASServices/Properties/launchSettings.json
+IASServices/IASServices.csproj
