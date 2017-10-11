@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using IASServices.Models;
 
+//using System.Data.e
 
 
 namespace IASServices.Controllers
@@ -27,6 +28,7 @@ namespace IASServices.Controllers
         public async Task<IEnumerable<Upowaznienia>> GetUpowaznieniaLista()
         {
             //var queryString = HttpContext.Request.Query;
+            //return _context.Upowaznienia.FromSql("select top 3 * from upowaznienia").ToList();
             return await _context.Upowaznienia.ToListAsync();
         }
 
@@ -107,6 +109,7 @@ namespace IASServices.Controllers
                 return BadRequest(ModelState);
             }
 
+           // _context.Database.SqlQuery("df");
             var upowaznienia = await _context.Upowaznienia.SingleOrDefaultAsync(m => m.Id == id);
             if (upowaznienia == null)
             {
