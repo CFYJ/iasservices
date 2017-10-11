@@ -99,34 +99,24 @@ namespace IASServices.Controllers
             return NoContent();
         }
 
-        [HttpPut("{id}")]
-        public async Task<IActionResult> DelUpowaznienia([FromRoute] long id, [FromBody] Upowaznienia upowaznienia)
+        [HttpPost("{id}")]
+        public async Task<IActionResult> DelUpowaznienia([FromRoute] long id)
         {
             if (!ModelState.IsValid)
             {
                 return BadRequest(ModelState);
             }
-           
 
-            _context.Upowaznienia.Remove(upowaznienia).State = EntityState.Modified;
-
-            try
+            var upowaznienia = await _context.Upowaznienia.SingleOrDefaultAsync(m => m.Id == id);
+            if (upowaznienia == null)
             {
-                await _context.SaveChangesAsync();
-            }
-            catch (DbUpdateConcurrencyException)
-            {
-                if (!UpowaznieniaExists(id))
-                {
-                    return NotFound();
-                }
-                else
-                {
-                    throw;
-                }
+                return NotFound();
             }
 
-            return NoContent();
+            _context.Upowaznienia.Remove(upowaznienia);
+            await _context.SaveChangesAsync();
+
+            return Ok(upowaznienia);
         }
 
 
