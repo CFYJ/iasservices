@@ -16,9 +16,12 @@ namespace IASServices.Controllers
     {
         private KontaktyContext _context;
 
-        public ADAuthenticationController(KontaktyContext context)
+        private IasSecurityContext securitycontext;
+
+        public ADAuthenticationController(KontaktyContext context, IasSecurityContext securitcx)
         {
             _context = context;
+            securitycontext = securitcx;
         }
 
         
@@ -121,6 +124,10 @@ namespace IASServices.Controllers
 
         private string GetUserRole(Kontakty userData)
         {
+            //Role r = securitycontext.Role.FromSql("select rola + ', ' AS 'data()' from role r left join roleuzytkownika ru on r.id = ru.id_roli where ru.id_uzytkownika=" + userData.Id).FirstOrDefaultAsync();
+            //SELECT Stuff((SELECT N', ' + rola  FROM [ias].[dbo].[role] FOR XML PATH(''),TYPE).value('text()[1]','nvarchar(max)'),1,2,N'')
+           // SELECT wniosek_nadania_upr +', ' AS 'data()' FROM[ias].[dbo].[upowaznienia] FOR XML PATH('')
+
             if (userData.Wydzial is null || userData.Stanowisko is null) return "User";
             if (userData.Wydzial.Equals("Wydzia³ Informatyki"))
                 return "Admin";
