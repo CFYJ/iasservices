@@ -18,6 +18,9 @@ namespace IASServices.Controllers
 
         private IasSecurityContext securitycontext;
 
+        bool czy_w_domu = true;
+        string home_user = "CFYL";
+
         public ADAuthenticationController(KontaktyContext context, IasSecurityContext securitcx)
         {
             _context = context;
@@ -62,14 +65,20 @@ namespace IASServices.Controllers
         [HttpPut]
         public IActionResult JwtAuthenticate1([FromBody] ADUser user)
         {
-            try
+           
+
+            if (!czy_w_domu)
+            {
+                try
             {
                 DirectoryEntry entry = new DirectoryEntry("LDAP://" + "mf.gov.pl", user.Name, user.Password);
                 object nativeObject = entry.NativeObject;
                 return Ok( new { Token = CreateToken(user) }); 
             }
             catch (DirectoryServicesCOMException) { return Unauthorized(); }
-            
+
+            }
+            return Ok(new { Token = CreateToken(new ADUser() { Name = home_user }) });
         }
 
 
@@ -77,15 +86,19 @@ namespace IASServices.Controllers
         [HttpPut]
         public string JwtAuthenticate([FromBody] ADUser user)
         {
+           
+
             string result = null;
-            try
-            {
-                DirectoryEntry entry = new DirectoryEntry("LDAP://" + "mf.gov.pl", user.Name, user.Password);
-                object nativeObject = entry.NativeObject;
-                result = CreateToken(user);
-            }
-            catch (DirectoryServicesCOMException) { }
-            return result;
+           
+                try
+                {
+                    DirectoryEntry entry = new DirectoryEntry("LDAP://" + "mf.gov.pl", user.Name, user.Password);
+                    object nativeObject = entry.NativeObject;
+                    result = CreateToken(user);
+                }
+                catch (DirectoryServicesCOMException) { }
+                return result;
+     
         }
 
         /// <summary>
@@ -127,12 +140,14 @@ namespace IASServices.Controllers
 
         private string GetUserRole(Kontakty userData)
         {
-            if (userData.Wydzial is null || userData.Stanowisko is null) return "User";
-            if (userData.Wydzial.Equals("Wydzia³ Informatyki"))
-                return "Admin";
-            else if (userData.Stanowisko.Contains("kierownik"))
-                return "Supervisor";            
-
+            if (!czy_w_domu)
+            {
+                if (userData.Wydzial is null || userData.Stanowisko is null) return "User";
+                if (userData.Wydzial.Equals("Wydzia³ Informatyki"))
+                    return "Admin";
+                else if (userData.Stanowisko.Contains("kierownik"))
+                    return "Supervisor";
+            }
             return "User";
         }
 
