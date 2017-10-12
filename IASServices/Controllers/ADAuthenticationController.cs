@@ -22,6 +22,7 @@ namespace IASServices.Controllers
         {
             _context = context;
             securitycontext = securitcx;
+          
         }
 
         
@@ -101,6 +102,7 @@ namespace IASServices.Controllers
             var notBefore = Math.Round((DateTime.UtcNow.AddMonths(6) - unixEpoch).TotalSeconds);
             var userData = GetUserData(user);
             var role = GetUserRole(userData);
+            var securityrole = GetSecurityUserRole(userData);
 
             var payload = new Dictionary<string, object>
             {
@@ -111,7 +113,8 @@ namespace IASServices.Controllers
                 //{"sub", user.Id},
                 {"nbf", notBefore},
                 {"iat", issuedAt},
-                {"exp", expiry}
+                {"exp", expiry},
+                {"securityrole", securityrole }
             };
 
             //var secret = ConfigurationManager.AppSettings.Get("jwtKey");
@@ -124,10 +127,6 @@ namespace IASServices.Controllers
 
         private string GetUserRole(Kontakty userData)
         {
-            //Role r = securitycontext.Role.FromSql("select rola + ', ' AS 'data()' from role r left join roleuzytkownika ru on r.id = ru.id_roli where ru.id_uzytkownika=" + userData.Id).FirstOrDefaultAsync();
-            //SELECT Stuff((SELECT N', ' + rola  FROM [ias].[dbo].[role] FOR XML PATH(''),TYPE).value('text()[1]','nvarchar(max)'),1,2,N'')
-           // SELECT wniosek_nadania_upr +', ' AS 'data()' FROM[ias].[dbo].[upowaznienia] FOR XML PATH('')
-
             if (userData.Wydzial is null || userData.Stanowisko is null) return "User";
             if (userData.Wydzial.Equals("Wydzia³ Informatyki"))
                 return "Admin";
@@ -135,6 +134,15 @@ namespace IASServices.Controllers
                 return "Supervisor";            
 
             return "User";
+        }
+
+        private string GetSecurityUserRole(Kontakty userData)
+        {
+
+            return securitycontext.Role.FromSql("SELECT cast(1 as bigint) as id, Stuff((SELECT N', ' + rola from role r left join roleuzytkownika ru on r.id = ru.id_roli where ru.id_uzytkownika=" + userData.Id+ " FOR XML PATH(''),TYPE).value('text()[1]','nvarchar(max)'),1,2,N'') as rola").First().Rola;
+
+            //return securitycontext.Role.FromSql("select id, rola from role r left join roleuzytkownika ru on r.id = ru.id_roli where ru.id_uzytkownika=" + userData.Id).AsEnumerable();
+
         }
 
         //private string GetUserRole(ADUser user)
