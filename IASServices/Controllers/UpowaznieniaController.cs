@@ -6,6 +6,8 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using IASServices.Models;
+using System.IO;
+using Microsoft.AspNetCore.Http;
 
 //using System.Data.e
 
@@ -125,6 +127,37 @@ namespace IASServices.Controllers
 
         private bool UpowaznieniaExists(long id)
            => _context.Upowaznienia.Any(e => e.Id == id);
+
+
+        [HttpPost]        
+        public async Task<IActionResult> FileUpload(IList<IFormFile> files)
+        {//IFormFile file
+         //IList<IFormFile> files
+         //[FromBody]  IFormFile fil
+
+
+            foreach (IFormFile file in files)
+            {
+
+                if (file == null || file.Length == 0)
+                    return Content("file not selected");
+
+                var path = Path.Combine(
+                            //Directory.GetCurrentDirectory(), "wwwroot",
+                            "c:\\tmp",
+                            file.FileName);
+
+                using (var stream = new FileStream(path, FileMode.Create))
+                {
+                    await file.CopyToAsync(stream);
+                }
+
+            }
+    
+           // return RedirectToAction("Files");
+
+            return Ok("true");
+        }
 
 
         //[HttpGet]
