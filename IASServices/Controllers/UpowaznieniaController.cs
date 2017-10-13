@@ -130,14 +130,15 @@ namespace IASServices.Controllers
 
 
         [HttpPost]        
-        public async Task<IActionResult> FileUpload(IList<IFormFile> files)
+        public async Task<IActionResult> FileUpload(IList<IFormFile> filess)
         {//IFormFile file
          //IList<IFormFile> files
          //[FromBody]  IFormFile fil
-
+            var files = Request.Form.Files;
 
             foreach (IFormFile file in files)
             {
+            
 
                 if (file == null || file.Length == 0)
                     return Content("file not selected");
