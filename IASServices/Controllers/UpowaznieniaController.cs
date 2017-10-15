@@ -8,6 +8,11 @@ using Microsoft.EntityFrameworkCore;
 using IASServices.Models;
 using System.IO;
 using Microsoft.AspNetCore.Http;
+using System.Net.Http;
+using System.Net.Http.Headers;
+using System.Net;
+using System;
+using System.Text;
 
 //using System.Data.e
 
@@ -158,6 +163,106 @@ namespace IASServices.Controllers
            // return RedirectToAction("Files");
 
             return Ok("true");
+        }
+
+
+        [HttpGet]
+        public FileResult TestDownload([FromRoute] int id)
+        {
+            //HttpContext.Response.ContentType = "application/pdf";
+            using (StreamReader str = new StreamReader("c:\\tmp\\zzz.txt"))
+            {
+              
+
+
+                //string z = str.ReadToEnd();
+                //System.Text.Encoding.UTF8.GetBytes(z)
+                byte[] content = System.IO.File.ReadAllBytes("c:\\tmp\\zzz.txt");
+                //System.IO.File.ReadAllBytes("c:\\tmp\\zzz.txt");
+
+                FileContentResult result = new FileContentResult(content, "application/octet-stream")
+                {
+                    FileDownloadName = "test.pdf"
+                };
+                
+                return result;
+            }
+        }
+
+        /*
+         * application/pdf
+         * application/octet-stream
+         * octet/stream
+         * text/plain
+         * application/octet-binary
+         * 
+         * 
+         */
+
+        [HttpGet]
+        //[Route("values/download")]
+        public HttpResponseMessage TestDownloadd([FromRoute] int id)
+            //d(string name)
+        {
+            try
+            {
+                //string fileName = string.Empty;
+                //if (name.Equals("pdf", StringComparison.InvariantCultureIgnoreCase))
+                //{
+                //    fileName = "SamplePdf.pdf";
+                //}
+                //else if (name.Equals("zip", StringComparison.InvariantCultureIgnoreCase))
+                //{
+                //    fileName = "SampleZip.zip";
+                //}
+                string fileName = "zzz.txt";
+                if (!string.IsNullOrEmpty(fileName))
+                {
+                    string filePath = "c:\\tmp\\zzz.txt";
+
+                    using (MemoryStream ms = new MemoryStream())
+                    {
+                        using (FileStream file = new FileStream(filePath, FileMode.Open, FileAccess.Read))
+                        {
+                            byte[] bytes = new byte[file.Length];
+                            file.Read(bytes, 0, (int)file.Length);
+                            ms.Write(bytes, 0, (int)file.Length);
+
+                            HttpResponseMessage httpResponseMessage = new HttpResponseMessage();
+                            httpResponseMessage.Content = new ByteArrayContent(bytes.ToArray());
+                            httpResponseMessage.Content.Headers.Add("x-filename", fileName);
+                            httpResponseMessage.Content.Headers.ContentType = new MediaTypeHeaderValue("application/octet-stream");
+                            httpResponseMessage.Content.Headers.ContentDisposition = new ContentDispositionHeaderValue("attachment");
+                            httpResponseMessage.Content.Headers.ContentDisposition.FileName = fileName;
+                            httpResponseMessage.StatusCode = HttpStatusCode.OK;
+                            return httpResponseMessage;
+                        }
+                    }
+                }
+                return (new HttpResponseMessage((HttpStatusCode.NotFound)));
+            }
+            catch (Exception ex)
+            {
+                return (new HttpResponseMessage((HttpStatusCode.InternalServerError)));
+                    //this.Request.CreateResponse(HttpStatusCode.InternalServerError, ex);
+            }
+        }
+
+        [HttpGet]
+        public ActionResult DownloadAttachment([FromRoute] int studentId)
+        {
+            //Console.Write("¿³¹óæ");
+            // Find user by passed id
+            // Student student = db.Students.FirstOrDefault(s => s.Id == studentId);
+
+            // var file = db.EmailAttachmentReceived.FirstOrDefault(x => x.LisaId == studentId);
+
+            byte[] fileBytes = System.IO.File.ReadAllBytes("c:\\tmp\\zzz.txt");
+            // System.IO.File.ReadAllBytes(file.Filepath);
+
+             return File(fileBytes, System.Net.Mime.MediaTypeNames.Application.Octet, "zzz.txt");
+           
+
         }
 
 
