@@ -36,7 +36,8 @@ namespace IASServices.Controllers
         {
             //var queryString = HttpContext.Request.Query;
             //return _context.Upowaznienia.FromSql("select top 3 * from upowaznienia").ToList();
-            return await _context.Upowaznienia.ToListAsync();
+            var lista = await _context.Upowaznienia.Include(pliki =>pliki.UpowaznieniaPliki).ToListAsync();
+            return lista;
         }
 
         [HttpGet("{id}")]
@@ -55,6 +56,16 @@ namespace IASServices.Controllers
             }
 
             return Ok(upowaznienia);
+        }
+
+
+        [HttpPost("{id}")]
+        public async Task<IEnumerable<UpowaznieniaPliki>> GetPliki([FromRoute] long id)
+        {
+           
+            var pliki =  _context.UpowaznieniaPliki.Where(m => m.IdUpowaznienia.Equals(id));
+            return pliki;
+         
         }
 
         // POST: api/Kontakties
