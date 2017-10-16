@@ -67,7 +67,7 @@ namespace IASServices.Controllers
             }
 
             _context.Upowaznienia.Add(upowaznienia);
-            await _context.SaveChangesAsync();
+           int newid= await _context.SaveChangesAsync();
 
             return CreatedAtAction("GetUpowaznienia", new { id = upowaznienia.Id }, upowaznienia);
         }
@@ -170,14 +170,14 @@ namespace IASServices.Controllers
         public FileResult TestDownload([FromRoute] int id)
         {
             //HttpContext.Response.ContentType = "application/pdf";
-            using (StreamReader str = new StreamReader("c:\\tmp\\zzz.txt"))
+            //using (StreamReader str = new StreamReader("c:\\tmp\\zzz.txt"))
             {
               
 
 
                 //string z = str.ReadToEnd();
                 //System.Text.Encoding.UTF8.GetBytes(z)
-                byte[] content = System.IO.File.ReadAllBytes("c:\\tmp\\zzz.txt");
+                byte[] content = System.IO.File.ReadAllBytes("c:\\tmp\\plik.pdf");
                 //System.IO.File.ReadAllBytes("c:\\tmp\\zzz.txt");
 
                 FileContentResult result = new FileContentResult(content, "application/octet-stream")
@@ -199,7 +199,7 @@ namespace IASServices.Controllers
          * 
          */
 
-        [HttpGet]
+        [HttpGet("{id}")]
         //[Route("values/download")]
         public HttpResponseMessage TestDownloadd([FromRoute] int id)
             //d(string name)
@@ -216,9 +216,12 @@ namespace IASServices.Controllers
                 //    fileName = "SampleZip.zip";
                 //}
                 string fileName = "zzz.txt";
+                if (id == 1)
+                    fileName = "plik.pdf";
+
                 if (!string.IsNullOrEmpty(fileName))
                 {
-                    string filePath = "c:\\tmp\\zzz.txt";
+                    string filePath = "c:\\tmp\\"+fileName;
 
                     using (MemoryStream ms = new MemoryStream())
                     {
@@ -236,6 +239,7 @@ namespace IASServices.Controllers
                             httpResponseMessage.Content.Headers.ContentDisposition.FileName = fileName;
                             httpResponseMessage.StatusCode = HttpStatusCode.OK;
                             return httpResponseMessage;
+                            
                         }
                     }
                 }
@@ -248,19 +252,23 @@ namespace IASServices.Controllers
             }
         }
 
-        [HttpGet]
-        public ActionResult DownloadAttachment([FromRoute] int studentId)
+        // ActionResult
+        [HttpGet("{studentId}")]
+        public FileResult DownloadAttachment([FromRoute] int studentId)
         {
             //Console.Write("¿³¹óæ");
             // Find user by passed id
             // Student student = db.Students.FirstOrDefault(s => s.Id == studentId);
-
+            var request = Request;
             // var file = db.EmailAttachmentReceived.FirstOrDefault(x => x.LisaId == studentId);
+            string plik = "zzz.txt";
+            if (studentId == 1)
+                plik = "plik.pdf";
 
-            byte[] fileBytes = System.IO.File.ReadAllBytes("c:\\tmp\\zzz.txt");
+            byte[] fileBytes = System.IO.File.ReadAllBytes("c:\\tmp\\"+plik);
             // System.IO.File.ReadAllBytes(file.Filepath);
 
-             return File(fileBytes, System.Net.Mime.MediaTypeNames.Application.Octet, "zzz.txt");
+            return File(fileBytes, System.Net.Mime.MediaTypeNames.Application.Octet,plik);
            
 
         }
