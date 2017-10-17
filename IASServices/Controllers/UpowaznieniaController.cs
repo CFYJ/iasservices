@@ -63,7 +63,7 @@ namespace IASServices.Controllers
         public async Task<IEnumerable<UpowaznieniaPliki>> GetPliki([FromRoute] long id)
         {
            
-            var pliki =  _context.UpowaznieniaPliki.Where(m => m.IdUpowaznienia.Equals(id));
+            var pliki = await _context.UpowaznieniaPliki.Where(m => m.IdUpowaznienia.Equals(id)).ToListAsync();
             return pliki;
          
         }
@@ -177,30 +177,8 @@ namespace IASServices.Controllers
         }
 
 
-        [HttpGet]
-        public FileResult TestDownload([FromRoute] int id)
-        {
-            //HttpContext.Response.ContentType = "application/pdf";
-            //using (StreamReader str = new StreamReader("c:\\tmp\\zzz.txt"))
-            {
-              
-
-
-                //string z = str.ReadToEnd();
-                //System.Text.Encoding.UTF8.GetBytes(z)
-                byte[] content = System.IO.File.ReadAllBytes("c:\\tmp\\plik.pdf");
-                //System.IO.File.ReadAllBytes("c:\\tmp\\zzz.txt");
-
-                FileContentResult result = new FileContentResult(content, "application/octet-stream")
-                {
-                    FileDownloadName = "test.pdf"
-                };
-                
-                return result;
-            }
-        }
-
-        /*
+        
+        /* Pobieranie plikow przez httpresponsemessage
          * application/pdf
          * application/octet-stream
          * octet/stream
@@ -208,8 +186,8 @@ namespace IASServices.Controllers
          * application/octet-binary
          * 
          * 
-         */
-
+        
+         
         [HttpGet("{id}")]
         //[Route("values/download")]
         public HttpResponseMessage TestDownloadd([FromRoute] int id)
@@ -263,34 +241,23 @@ namespace IASServices.Controllers
             }
         }
 
+     */
+
         // ActionResult
-        [HttpGet("{studentId}")]
-        public FileResult DownloadAttachment([FromRoute] int studentId)
+        [HttpGet("{id}")]
+        public FileResult FileDownload([FromRoute] int id)
         {
-            //Console.Write("¿³¹óæ");
-            // Find user by passed id
-            // Student student = db.Students.FirstOrDefault(s => s.Id == studentId);
-            var request = Request;
-            // var file = db.EmailAttachmentReceived.FirstOrDefault(x => x.LisaId == studentId);
+
             string plik = "zzz.txt";
-            if (studentId == 1)
+            if (id == 1)
                 plik = "plik.pdf";
 
             byte[] fileBytes = System.IO.File.ReadAllBytes("c:\\tmp\\"+plik);
-            // System.IO.File.ReadAllBytes(file.Filepath);
 
             return File(fileBytes, System.Net.Mime.MediaTypeNames.Application.Octet,plik);
            
 
         }
-
-
-        //[HttpGet]
-        //public async Task<IEnumerable<Upowaznienia>> GetUpowaznieniaLista()
-        //{
-        //    //var queryString = HttpContext.Request.Query;
-        //    return await (new IASServices.Models.UpowaznieniaContext(null)).Upowaznienia.ToListAsync();
-        //}
 
 
 
