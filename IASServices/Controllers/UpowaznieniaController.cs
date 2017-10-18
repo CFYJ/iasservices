@@ -14,7 +14,7 @@ using System.Net;
 using System;
 using System.Text;
 
-//using System.Data.e
+using System.Configuration;
 
 
 namespace IASServices.Controllers
@@ -152,22 +152,35 @@ namespace IASServices.Controllers
          //[FromBody]  IFormFile fil
             var files = Request.Form.Files;
 
+            string filePath = ConfigurationManager.AppSettings.Get("filesCatalogPath");
+
             foreach (IFormFile file in files)
             {
-            
 
+                
                 if (file == null || file.Length == 0)
                     return Content("file not selected");
 
-                var path = Path.Combine(
-                            //Directory.GetCurrentDirectory(), "wwwroot",
-                            "c:\\tmp",
-                            file.FileName);
+                string vFileId = DateTime.Now.Ticks.ToString();
 
-                using (var stream = new FileStream(path, FileMode.Create))
+                var path = Path.Combine(
+                            filePath,
+                            vFileId);
+
+                try
                 {
-                    await file.CopyToAsync(stream);
+                    using (var stream = new FileStream(path, FileMode.Create))
+                    {
+                        await file.CopyToAsync(stream);
+                    }
+                    UpowaznieniaPliki plik = new UpowaznieniaPliki() { IdPliku = vFileId, Nazwa = file.FileName };
+                    _context.UpowaznieniaPliki.Add(plik);
+                    int newid = await _context.SaveChangesAsync();
+
+                    return CreatedAtAction("GetPliki", new { id = plik.Id }, plik);
+
                 }
+                catch(Exception ex) { return BadRequest(); }
 
             }
     
@@ -177,7 +190,8 @@ namespace IASServices.Controllers
         }
 
 
-        
+        #region testy pobierania plikow
+
         /* Pobieranie plikow przez httpresponsemessage
          * application/pdf
          * application/octet-stream
@@ -242,21 +256,59 @@ namespace IASServices.Controllers
         }
 
      */
+        #endregion
 
         // ActionResult
         [HttpGet("{id}")]
-        public FileResult FileDownload([FromRoute] int id)
+        public FileResult FileDownload([FromRoute] long id)
+        {
+            string filePath = ConfigurationManager.AppSettings.Get("filesCatalogPath");
+
+            //string plik = "zzz.txt";
+            //if (id == 1)
+            //    plik = "plik.pdf";
+
+            UpowaznieniaPliki plik = _context.UpowaznieniaPliki.Where(p => p.Id.Equals(id)).First();
+
+
+            var path = Path.Combine(filePath, plik.IdPliku);
+
+            try
+            {
+                byte[] fileBytes = System.IO.File.ReadAllBytes(path);
+
+                return File(fileBytes, System.Net.Mime.MediaTypeNames.Application.Octet, plik.Nazwa);
+            }
+            catch (Exception ex) { return null; };
+        }
+
+        [HttpGet("{id}")]
+        public async Task<IActionResult> DeleteFile([FromRoute] long id)
         {
 
-            string plik = "zzz.txt";
-            if (id == 1)
-                plik = "plik.pdf";
+            UpowaznieniaPliki plik = _context.UpowaznieniaPliki.Where(p => p.Id.Equals(id)).First();
 
-            byte[] fileBytes = System.IO.File.ReadAllBytes("c:\\tmp\\"+plik);
+            if (plik == null)
+                return Ok(false);
 
-            return File(fileBytes, System.Net.Mime.MediaTypeNames.Application.Octet,plik);
-           
 
+            string filePath = ConfigurationManager.AppSettings.Get("filesCatalogPath");
+            var path = Path.Combine(
+                           filePath,
+                           plik.IdPliku);
+            try
+            {
+                System.IO.File.Delete(path);
+
+                _context.UpowaznieniaPliki.Remove(plik);
+                await _context.SaveChangesAsync();
+            }
+            catch(Exception ex)
+            {
+                return Ok(false);
+            }
+
+            return Ok(true);
         }
 
 
