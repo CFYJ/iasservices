@@ -37,8 +37,7 @@ namespace IASServices.Models
         public string Decyzja { get; set; }
         [Column("uwagi", TypeName = "text")]
         public string Uwagi { get; set; }
-
-        [Required]
+   
         [InverseProperty("IdUpowaznieniaNavigation")]
         public virtual ICollection<UpowaznieniaPliki> UpowaznieniaPliki { get; set; }
     }

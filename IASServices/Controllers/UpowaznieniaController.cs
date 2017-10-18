@@ -70,7 +70,7 @@ namespace IASServices.Controllers
 
         // POST: api/Kontakties
         [HttpPost]
-        public async Task<IActionResult> PostUpowaznienia([FromBody] Upowaznienia upowaznienia)
+        public async Task<IActionResult> AddUpowaznienia([FromBody] Upowaznienia upowaznienia)
         {
             if (!ModelState.IsValid)
             {
@@ -86,7 +86,7 @@ namespace IASServices.Controllers
 
         // PUT: api/Kontakties/5
         [HttpPut("{id}")]
-        public async Task<IActionResult> PutUpowaznienia([FromRoute] long id, [FromBody] Upowaznienia upowaznienia)
+        public async Task<IActionResult> UpdateUpowaznienia([FromRoute] long id, [FromBody] Upowaznienia upowaznienia)
         {
             if (!ModelState.IsValid)
             {
