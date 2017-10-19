@@ -1,0 +1,11 @@
+Listen 8080
+<VirtualHost *:8080>
+     ServerName wiskas
+     DocumentRoot C:\xampp\htdocs\wiskas
+     SetEnv APPLICATION_ENV "development"
+     <Directory C:\xampp\htdocs\wiskas>
+         DirectoryIndex index.html  
+	 AllowOverride All
+         Require all granted
+     </Directory>
+ </VirtualHost>
