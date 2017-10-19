@@ -76,9 +76,17 @@ namespace IASServices.Controllers
             {
                 return BadRequest(ModelState);
             }
-
+            List<UpowaznieniaPliki> pliki = upowaznienia.UpowaznieniaPliki.ToList();
+            upowaznienia.UpowaznieniaPliki.Clear();
             _context.Upowaznienia.Add(upowaznienia);
            int newid= await _context.SaveChangesAsync();
+
+
+            foreach(UpowaznieniaPliki plik in pliki)
+            {
+                _context.Database.ExecuteSqlCommand("update upowaznieniapliki set id_upowaznienia = {0} where id={1}", upowaznienia.Id, plik.Id);
+                _context.SaveChanges();
+            }
 
             return CreatedAtAction("GetUpowaznienia", new { id = upowaznienia.Id }, upowaznienia);
         }
@@ -96,6 +104,12 @@ namespace IASServices.Controllers
             if (id != upowaznienia.Id)
             {
                 return BadRequest();
+            }
+
+            foreach (UpowaznieniaPliki plik in upowaznienia.UpowaznieniaPliki)
+            {
+                _context.Database.ExecuteSqlCommand("update upowaznieniapliki set id_upowaznienia = {0} where id={1}", upowaznienia.Id, plik.Id);
+                _context.SaveChanges();
             }
 
             _context.Entry(upowaznienia).State = EntityState.Modified;
@@ -128,10 +142,20 @@ namespace IASServices.Controllers
             }
 
            // _context.Database.SqlQuery("df");
-            var upowaznienia = await _context.Upowaznienia.SingleOrDefaultAsync(m => m.Id == id);
+            var upowaznienia = await _context.Upowaznienia.Include(pliki => pliki.UpowaznieniaPliki).SingleOrDefaultAsync(m => m.Id == id);
             if (upowaznienia == null)
             {
                 return NotFound();
+            }
+
+            foreach(UpowaznieniaPliki plik in upowaznienia.UpowaznieniaPliki)
+            {
+
+                string filePath = ConfigurationManager.AppSettings.Get("filesCatalogPath");
+                var path = Path.Combine(
+                               filePath,
+                               plik.IdPliku);
+                System.IO.File.Delete(path);
             }
 
             _context.Upowaznienia.Remove(upowaznienia);
@@ -259,8 +283,8 @@ namespace IASServices.Controllers
         #endregion
 
         // ActionResult
-        [HttpGet("{id}")]
-        public FileResult FileDownload([FromRoute] long id)
+        [HttpGet("{idpliku}")]
+        public FileResult FileDownload([FromRoute] string idpliku)
         {
             string filePath = ConfigurationManager.AppSettings.Get("filesCatalogPath");
 
@@ -268,7 +292,7 @@ namespace IASServices.Controllers
             //if (id == 1)
             //    plik = "plik.pdf";
 
-            UpowaznieniaPliki plik = _context.UpowaznieniaPliki.Where(p => p.Id.Equals(id)).First();
+            UpowaznieniaPliki plik = _context.UpowaznieniaPliki.Where(p => p.IdPliku.Equals(idpliku)).First();
 
 
             var path = Path.Combine(filePath, plik.IdPliku);

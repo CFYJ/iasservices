@@ -7,6 +7,7 @@ namespace IASServices.Models
 {
     public partial class UpowaznieniaPliki
     {
+        [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
         [Column("id")]
         public long Id { get; set; }
         [Column("id_upowaznienia")]
