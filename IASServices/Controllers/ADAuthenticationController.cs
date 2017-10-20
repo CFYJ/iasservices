@@ -8,6 +8,8 @@ using System.DirectoryServices;
 using System.Linq;
 using System.Threading.Tasks;
 
+using System.Configuration;
+
 namespace IASServices.Controllers
 {
     [Produces("application/json")]
@@ -23,7 +25,11 @@ namespace IASServices.Controllers
 
         public ADAuthenticationController(KontaktyContext context, IasSecurityContext securitcx)
         {
-            _context = context;
+            if (ConfigurationManager.AppSettings.Get("czyProdukcyjny") == "true")
+                czy_w_domu = false;
+
+
+                _context = context;
             securitycontext = securitcx;
           
         }
