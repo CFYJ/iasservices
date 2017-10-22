@@ -20,14 +20,11 @@ namespace IASServices.Controllers
 
         private IasSecurityContext securitycontext;
 
-        bool czy_w_domu = true;
+        bool czy_w_domu = ConfigurationManager.AppSettings.Get("czyProdukcyjny") == "true" ? false : true;
         string home_user = "CFYL";
 
         public ADAuthenticationController(KontaktyContext context, IasSecurityContext securitcx)
-        {
-            if (ConfigurationManager.AppSettings.Get("czyProdukcyjny") == "true")
-                czy_w_domu = false;
-
+        {       
 
                 _context = context;
             securitycontext = securitcx;
@@ -146,7 +143,7 @@ namespace IASServices.Controllers
 
         private string GetUserRole(Kontakty userData)
         {
-            if (!czy_w_domu)
+            //if (!czy_w_domu)
             {
                 if (userData.Wydzial is null || userData.Stanowisko is null) return "User";
                 if (userData.Wydzial.Equals("Wydzia³ Informatyki"))
