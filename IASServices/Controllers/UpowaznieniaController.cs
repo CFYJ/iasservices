@@ -29,15 +29,20 @@ namespace IASServices.Controllers
         public UpowaznieniaController(UpowaznieniaContext context)
         {
             _context = context;
+
         }
 
         [HttpGet]
         public async Task<IEnumerable<Upowaznienia>> GetUpowaznieniaLista()
         {
+       
+            var zapytanie = Request.Query["pageindex"];
             //var queryString = HttpContext.Request.Query;
             //return _context.Upowaznienia.FromSql("select top 3 * from upowaznienia").ToList();
             var lista = await _context.Upowaznienia.Include(pliki =>pliki.UpowaznieniaPliki).ToListAsync();
+       
             return lista;
+  
         }
 
         [HttpGet("{id}")]
