@@ -15,6 +15,7 @@ using System;
 using System.Text;
 
 using System.Configuration;
+using Newtonsoft.Json;
 
 
 namespace IASServices.Controllers
@@ -30,20 +31,71 @@ namespace IASServices.Controllers
         {
             _context = context;
 
+            //int? zz = HttpContext.Session.GetInt32("zz");
+            //HttpContext.Session.SetInt32("zz", zz.GetValueOrDefault(0) + 1);
+
         }
 
         [HttpGet]
         public async Task<IEnumerable<Upowaznienia>> GetUpowaznieniaLista()
         {
        
-            var zapytanie = Request.Query["pageindex"];
+            var zapytanie = Request.Query["pagesize"];
             //var queryString = HttpContext.Request.Query;
             //return _context.Upowaznienia.FromSql("select top 3 * from upowaznienia").ToList();
             var lista = await _context.Upowaznienia.Include(pliki =>pliki.UpowaznieniaPliki).ToListAsync();
-       
+        
             return lista;
+        
   
         }
+
+        [HttpGet]
+        public async Task<IActionResult> GetUpowaznieniaListaPaged()
+        {
+
+            var zapytanie = Request.Query["pagesize"];
+            //var queryString = HttpContext.Request.Query;
+            //return _context.Upowaznienia.FromSql("select top 3 * from upowaznienia").ToList();
+            var lista = await _context.Upowaznienia.Include(pliki => pliki.UpowaznieniaPliki).ToListAsync();
+            // JsonConvert.SerializeObject(lista)
+
+          
+            var result=new JqwidgetGridSource(30, lista);
+            //var zz = JsonConvert.SerializeObject(result, new JsonSerializerSettings()
+            //{
+            //    ReferenceLoopHandling =
+            //        Newtonsoft.Json.ReferenceLoopHandling.Ignore
+            //});
+
+            //return Content(zz);
+           // return new JsonResult(result);
+            var res = new
+            {
+                TotalRows = 30,
+                Rows = lista
+            };
+
+            return Json(res);
+
+         
+
+
+
+        }
+        private class JqwidgetGridSource {
+            public int TotalRows;
+            public IEnumerable<Upowaznienia> Rows;
+
+            public JqwidgetGridSource(int RowCount, IEnumerable<Upowaznienia> Rows)
+            {
+                this.TotalRows = RowCount;
+                this.Rows = Rows;
+            }
+
+        }
+
+
 
         [HttpGet("{id}")]
         public async Task<IActionResult> GetUpowaznienia([FromRoute] long id)
@@ -63,7 +115,7 @@ namespace IASServices.Controllers
             return Ok(upowaznienia);
         }
 
-
+    
         [HttpPost("{id}")]
         public async Task<IEnumerable<UpowaznieniaPliki>> GetPliki([FromRoute] long id)
         {
@@ -287,15 +339,12 @@ namespace IASServices.Controllers
      */
         #endregion
 
+     
         // ActionResult
         [HttpGet("{idpliku}")]
         public FileResult FileDownload([FromRoute] string idpliku)
         {
-            string filePath = ConfigurationManager.AppSettings.Get("filesCatalogPath");
-
-            //string plik = "zzz.txt";
-            //if (id == 1)
-            //    plik = "plik.pdf";
+            string filePath = ConfigurationManager.AppSettings.Get("filesCatalogPath");    
 
             UpowaznieniaPliki plik = _context.UpowaznieniaPliki.Where(p => p.IdPliku.Equals(idpliku)).First();
 

@@ -59,6 +59,11 @@ namespace IASServices
                                                                      .AllowAnyHeader()));
 
             services.AddMvc();
+          
+
+            services.AddDistributedMemoryCache(); // Adds a default in-memory implementation of IDistributedCache
+            services.AddSession();
+
             services.Configure<GzipCompressionProviderOptions>(options => options.Level = System.IO.Compression.CompressionLevel.Optimal);
             services.AddResponseCompression();
             services.Configure<MvcOptions>(options =>
@@ -88,13 +93,15 @@ namespace IASServices
             loggerFactory.AddConsole(Configuration.GetSection("Logging"));
             loggerFactory.AddDebug();
 
+            app.UseSession();
             app.UseCors("AllowAll");
             //app.UseCors(builder => builder.AllowAnyOrigin()//.WithOrigins("http://192.168.1.101:81")
             //                              .AllowAnyMethod()
             //                              .AllowAnyHeader());
             app.UseResponseCompression();
             app.UseMvc();
-            
+         
+
 
 
             //var options = new RewriteOptions()
