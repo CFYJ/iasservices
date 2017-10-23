@@ -5,6 +5,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Security.Cryptography.X509Certificates;
+using System.Configuration;
 
 namespace IASServices
 {
@@ -12,7 +13,8 @@ namespace IASServices
     {
         public static void Main(string[] args)
         {
-            bool isService = true;
+            //bool isService = true;
+            bool isService = ConfigurationManager.AppSettings.Get("runasservice") == "true" ? true : false;
             if (Debugger.IsAttached || args.Contains("--console"))
             {
                 isService = false;
@@ -32,7 +34,8 @@ namespace IASServices
             var host = new WebHostBuilder()
             .UseKestrel()
             //.UseKestrel(cfg => cfg.UseHttps(cert))
-            //.UseUrls("http://localhost:5000","https://localhost:5001")
+            //.UseUrls("http://localhost:5001","https://localhost:5001")
+            .UseUrls("http://localhost:5001")
             .UseContentRoot(pathToContentRoot)
             .UseIISIntegration()
             .UseStartup<Startup>()
