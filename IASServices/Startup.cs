@@ -16,6 +16,7 @@ using System.Diagnostics;
 using System.IO;
 using Microsoft.AspNetCore.Server.Kestrel;
 using Microsoft.AspNetCore.Mvc.Cors.Internal;
+using Microsoft.AspNetCore.Http.Features;
 
 namespace IASServices
 {
@@ -69,6 +70,15 @@ namespace IASServices
             services.Configure<MvcOptions>(options =>
             {
                 options.Filters.Add(new CorsAuthorizationFilterFactory("AllowAll"));
+               
+            });
+
+            //wasl zwiekszenie limitow uploadu plikow
+            services.Configure<FormOptions>(options =>
+            {
+                options.ValueCountLimit = 10; //default 1024
+                options.ValueLengthLimit = int.MaxValue; //not recommended value
+                options.MultipartBodyLengthLimit = long.MaxValue; //not recommended value
             });
 
             //services.Configure<MvcOptions>(options =>
