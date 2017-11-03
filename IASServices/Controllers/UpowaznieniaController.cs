@@ -51,7 +51,6 @@ namespace IASServices.Controllers
         }
 
 
-        // public async Task<IActionResult> GetUpowaznieniaListaPaged()
         [HttpGet]
         public async Task<IActionResult> GetUpowaznieniaListaPaged()
         {
@@ -68,10 +67,59 @@ namespace IASServices.Controllers
                 ",nadajacy_upr,prowadzacy_rejestr_uzyt,wniosek_odebrania_upr, " +
                 "odbierajacy_upr,opiekun,adres_email,decyzja,uwagi " +
                 "from (select *, ROW_NUMBER() OVER(ORDER BY id asc) AS Row from upowaznienia ) zz " +
-                "where zz.row>="+startindex+" and zz.row<"+(startindex+pagesize)).ToListAsync();
-            
-            
-            
+                "where zz.row>="+startindex+" and zz.row<"+(startindex+pagesize)).Include(pliki => pliki.UpowaznieniaPliki).ToListAsync();
+
+
+
+            var res = new
+            {
+                TotalRows = 30,
+                Rows = lista
+            };
+
+
+
+            var wynik = Json(res);
+
+            return wynik;
+
+
+
+            #region stare
+
+
+
+
+
+
+
+            //var lista = _context.Upowaznienia.Include(pliki => pliki.UpowaznieniaPliki).ToListAsync();
+            //var res = new
+            //{
+            //    TotalRows = 30,
+            //    Rows = lista
+            //};
+
+            //var zz = Json(res);
+
+            //return zz;
+
+
+
+
+
+            //var zz = JsonConvert.SerializeObject(res, new JsonSerializerSettings()
+            //{
+            //    ReferenceLoopHandling =
+            //        Newtonsoft.Json.ReferenceLoopHandling.Ignore
+            //});
+
+            // return Content(zz);
+
+
+
+
+
             // JsonConvert.SerializeObject(lista)
             //var result=new JqwidgetGridSource(30, lista);
             //var zz = JsonConvert.SerializeObject(result, new JsonSerializerSettings()
@@ -84,26 +132,17 @@ namespace IASServices.Controllers
             // return new JsonResult(result);
 
 
-            var res = new
-            {
-                TotalRows = 30,
-                Rows = lista
-            };
+            //proby
 
 
 
-            //var zz = JsonConvert.SerializeObject(res, new JsonSerializerSettings()
-            //{
-            //    ReferenceLoopHandling =
-            //        Newtonsoft.Json.ReferenceLoopHandling.Ignore
-            //});
-
-           // return Content(zz);
 
 
-            var wynik = Json(res);
 
-            return wynik;
+
+            #endregion
+
+
         }
 
         private class JqwidgetGridSource {
