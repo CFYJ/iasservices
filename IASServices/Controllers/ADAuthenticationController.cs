@@ -156,6 +156,8 @@ namespace IASServices.Controllers
 
         private string GetSecurityUserRole(Kontakty userData)
         {
+            if (czy_w_domu)
+                userData.Id = 1;
 
             return securitycontext.Role.FromSql("SELECT cast(1 as bigint) as id, Stuff((SELECT N', ' + rola from role r left join roleuzytkownika ru on r.id = ru.id_roli where ru.id_uzytkownika=" + userData.Id+ " FOR XML PATH(''),TYPE).value('text()[1]','nvarchar(max)'),1,2,N'') as rola").First().Rola;
 
