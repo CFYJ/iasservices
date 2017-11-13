@@ -131,7 +131,7 @@ namespace IASServices.Controllers
         {
             return await _context.Kontakty.OrderBy(k => k.Jednostka).Select(k => k.Jednostka).Distinct().ToListAsync();
         }
-            
+
 
         [HttpGet]
         public async Task<IEnumerable<string>> GetMiejscePracy()
@@ -145,5 +145,21 @@ namespace IASServices.Controllers
         public async Task<IEnumerable<string>> GetPion()
             => await _context.Kontakty.OrderBy(k => k.Pion).Select(k => k.Pion).Distinct().ToListAsync();
 
+
+
+        //******************** funkcje google maps *********************
+        [HttpPost]
+        public async Task<IActionResult> AddAddress(string linia)
+        {
+
+            //var line = System.Net.WebUtility.UrlDecode(Request.QueryString.Value);
+       
+            System.IO.File.AppendAllLines("c:\\tmp\\adresy_geo_maps.csv", new List<string>() { linia });
+
+            return Ok(true);
+        }
+
+
+        //**************************************************************
     }
 }
