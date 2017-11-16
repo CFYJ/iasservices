@@ -160,6 +160,14 @@ namespace IASServices.Controllers
         }
 
 
+        [HttpPost]
+        public async Task<IEnumerable<KontaktyJednostkiKas>> GetJednostkiKas()
+        {
+            var result = await _context.KontaktyJednostkiKas.ToListAsync();
+            return result;
+        }
+        
+
         //**************************************************************
     }
 }

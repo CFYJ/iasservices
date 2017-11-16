@@ -5,6 +5,7 @@ namespace IASServices.Models
     public partial class KontaktyContext : DbContext
     {
         public virtual DbSet<Kontakty> Kontakty { get; set; }
+        public virtual DbSet<KontaktyJednostkiKas> KontaktyJednostkiKas { get; set; }
 
         //public KontaktyContext()
         //{ }
