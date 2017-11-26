@@ -26,10 +26,12 @@ namespace IASServices.Controllers
     public class UpowaznieniaController : Controller
     {
         private readonly UpowaznieniaContext _context;
+        private KontaktyContext _kontaktycontext;
 
-        public UpowaznieniaController(UpowaznieniaContext context)
+        public UpowaznieniaController(UpowaznieniaContext context,  KontaktyContext _kcontext)
         {
             _context = context;
+            _kontaktycontext = _kcontext;
 
             //int? zz = HttpContext.Session.GetInt32("zz");
             //HttpContext.Session.SetInt32("zz", zz.GetValueOrDefault(0) + 1);
@@ -452,6 +454,61 @@ namespace IASServices.Controllers
         }
 
 
+        [HttpGet]
+        public async Task<IEnumerable<Telefony>> GetTelefony()
+        {
+            //using (var context = new SampleContext())
+            //using (var command = context.Database.GetDbConnection().CreateCommand())
+            //{
+            //    command.CommandText = "SELECT * From Table1";
+            //    context.Database.OpenConnection();
+            //    using (var result = command.ExecuteReader())
+            //    {
+            //        // do something with result
+            //    }
+            //}
+            using(var cxt =_kontaktycontext)
+            using (var cmd = cxt.Database.GetDbConnection().CreateCommand())
+            {
+                cmd.CommandText = " select imie+' ' + nazwisko as osoba, telefon from kontakty where charindex(imie + ' ' + nazwisko"
+                                    + ", (SELECT  STUFF("
+                                    + "(SELECT ', ' + CONVERT(NVARCHAR(max), opiekun) "
+                                    + "FROM ias.dbo.upowaznienia "
+                                    + "FOR xml path('') "
+                                    + ")"
+                                    + ", 1"
+                                    + ", 1"
+                                    + ", '')) ) <> 0";
+                //cmd.CommandText = "select 'zzz'";
+                cxt.Database.OpenConnection();
+                using (var result = cmd.ExecuteReader())
+                {                 
+                    
+                    List<Telefony> rez = new List<Telefony>();
+
+                    while (result.Read())
+                    {
+                        //var z = result.GetValue(0);
+                        rez.Add(new Telefony() { user = result.GetValue(0).ToString(), telefon = result.GetValue(1).ToString() });
+                    }
+
+                    return rez;
+
+                }
+                
+            }
+                //return null;
+        }
+
+        public class Telefony
+        {
+            public string user;
+            public string telefon;
+
+        }
+
 
     }
+
+   
 }
