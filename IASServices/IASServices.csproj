@@ -7,8 +7,8 @@
   <PropertyGroup>
     <TargetFramework>net452</TargetFramework>
     <RuntimeIdentifier>win7-x86</RuntimeIdentifier>
-    <AssemblyName>IASServicesw</AssemblyName>
-    <RootNamespace>IASServicesw</RootNamespace>
+    <AssemblyName>IASServices</AssemblyName>
+    <RootNamespace>IASServices</RootNamespace>
     <ApplicationIcon />
     <OutputTypeEx>exe</OutputTypeEx>
     <StartupObject />
