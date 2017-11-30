@@ -173,5 +173,13 @@ namespace IASServices.Controllers
 
         private Kontakty GetUserData(ADUser user)
             => _context.Kontakty.SingleOrDefault(k => k.Login.Equals(user.Name));
+
+
+        [HttpGet]
+        public async Task<IEnumerable<Role>> GetRole()
+        {
+            //var queryString = HttpContext.Request.Query;
+            return await securitycontext.Role.ToListAsync();
+        }
     }
 }
