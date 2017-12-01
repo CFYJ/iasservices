@@ -26,6 +26,14 @@ namespace IASServices.Models
                 entity.Property(e => e.Rola)
                     .HasColumnName("rola")
                     .HasColumnType("varchar(50)");
+
+                entity.Property(e => e.Modul)
+                    .HasColumnName("modul")
+                    .HasColumnType("varchar(50)");
+
+                entity.Property(e => e.Opis)
+                    .HasColumnName("opis")
+                    .HasColumnType("varchar(300)");
             });
 
             modelBuilder.Entity<Roleuzytkownika>(entity =>

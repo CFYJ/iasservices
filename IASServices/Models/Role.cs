@@ -7,5 +7,7 @@ namespace IASServices.Models
     {
         public long Id { get; set; }
         public string Rola { get; set; }
+        public string Modul { get; set; }
+        public string Opis { get; set; }
     }
 }

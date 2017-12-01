@@ -8,5 +8,9 @@ namespace IASServices.Models
         public long Id { get; set; }
         public long? IdRoli { get; set; }
         public long? IdUzytkownika { get; set; }
+        public DateTime DataPoczatku { get; set; }
+        public DateTime? DataKonca { get; set; }
+        public string Nadal { get; set; }
+        public string Odebral { get; set; }
     }
 }

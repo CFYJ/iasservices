@@ -159,7 +159,7 @@ namespace IASServices.Controllers
             if (czy_w_domu)
                 userData.Id = 1;
 
-            return securitycontext.Role.FromSql("SELECT cast(1 as bigint) as id, Stuff((SELECT N', ' + rola from role r left join roleuzytkownika ru on r.id = ru.id_roli where ru.id_uzytkownika=" + userData.Id+ " FOR XML PATH(''),TYPE).value('text()[1]','nvarchar(max)'),1,2,N'') as rola").First().Rola;
+            return securitycontext.Role.FromSql("SELECT cast(1 as bigint) as id, Stuff((SELECT N', ' + rola from role r left join roleuzytkownika ru on r.id = ru.id_roli where ru.datakonca is null and ru.id_uzytkownika=" + userData.Id+ " FOR XML PATH(''),TYPE).value('text()[1]','nvarchar(max)'),1,2,N'') as rola, null as modul,null as opis ").First().Rola;
 
             //return securitycontext.Role.FromSql("select id, rola from role r left join roleuzytkownika ru on r.id = ru.id_roli where ru.id_uzytkownika=" + userData.Id).AsEnumerable();
 
@@ -174,6 +174,45 @@ namespace IASServices.Controllers
         private Kontakty GetUserData(ADUser user)
             => _context.Kontakty.SingleOrDefault(k => k.Login.Equals(user.Name));
 
+        [HttpGet("{id}")]
+        public async Task<IEnumerable<UserHistory>> GetUsersHistory([FromRoute] long id)
+        {
+       
+            using (var cxt = securitycontext)
+            using (var cmd = cxt.Database.GetDbConnection().CreateCommand())
+            {
+                cmd.CommandText = " select rola, datapoczatku, nadal, datakonca, odebral from ias.dbo.roleuzytkownika ru left join ias.dbo.role ro on ru.id_roli = ro.id where ru.id_uzytkownika="+id.ToString()+" order by rola, datapoczatku asc";
+
+                cxt.Database.OpenConnection();
+                using (var result = cmd.ExecuteReader())
+                {
+                    if (!result.HasRows)
+                        return null;
+
+                    List<UserHistory> rez = new List<UserHistory>();
+
+                    while (result.Read())
+                    {
+                        DateTime datand;
+                        DateTime dataod;
+                  
+                        rez.Add(new UserHistory()
+                        {
+                            rola = result.GetValue(0).ToString(),
+                            datanadania = DateTime.TryParse(result.GetValue(1).ToString(), out datand)?datand.ToShortDateString():"",
+                            nadal = result.GetValue(2).ToString(),
+                            dataodebrania = DateTime.TryParse(result.GetValue(3).ToString(), out dataod) ? datand.ToShortDateString() : "",
+                            odebral = result.GetValue(4).ToString()                           
+                        });
+                    }
+
+                    return  rez;
+
+                }
+
+            }
+        }
+
 
         [HttpGet]
         public async Task<IEnumerable<Role>> GetRole()
@@ -181,5 +220,372 @@ namespace IASServices.Controllers
             //var queryString = HttpContext.Request.Query;
             return await securitycontext.Role.ToListAsync();
         }
+
+
+        [HttpGet]
+        public async Task<IEnumerable<UserRole>> GetUsersNotInRole()
+        {
+            string id = Request.Query["id"];
+            using (var cxt = _context)
+            using (var cmd = cxt.Database.GetDbConnection().CreateCommand())
+            {
+                cmd.CommandText = " select id, coalesce(imie,'')+' '+coalesce(nazwisko,'') as nazwa, login, wydzial from ias.dbo.kontakty "
+                    + "where id not in(select coalesce(id_uzytkownika, 0) from  roleuzytkownika where id_roli ="+id+" and datakonca is null) ";
+               
+                cxt.Database.OpenConnection();
+                using (var result = cmd.ExecuteReader())
+                {
+                    if (!result.HasRows)
+                        return null;
+
+                    List<UserRole> rez = new List<UserRole>();
+
+                    while (result.Read())
+                    {
+                        rez.Add(new UserRole() {
+                            id = result.GetValue(0).ToString(),
+                            nazwa = result.GetValue(1).ToString(),
+                            login = result.GetValue(2).ToString(),
+                            wydzial = result.GetValue(3).ToString()
+                        });
+                    }
+
+                    return rez;
+
+                }
+
+            }
+        }
+
+
+        [HttpGet]
+        public async Task<IEnumerable<UserRole>> GetUsersInRole()
+        {
+      
+            string id = Request.Query["id"];
+            using (var cxt = _context)
+            using (var cmd = cxt.Database.GetDbConnection().CreateCommand())
+            {
+                cmd.CommandText = " select id, coalesce(imie,'')+' '+coalesce(nazwisko,'') as nazwa,login, wydzial from ias.dbo.kontakty "
+                    + "where id in(select id_uzytkownika from  roleuzytkownika where id_roli =" + id + " and datakonca is null) ";
+
+                cxt.Database.OpenConnection();
+                using (var result = cmd.ExecuteReader())
+                {
+                    if (!result.HasRows)
+                        return null;
+
+                    List<UserRole> rez = new List<UserRole>();
+
+                    while (result.Read())
+                    {
+                        rez.Add(new UserRole()
+                        {
+                            id = result.GetValue(0).ToString(),
+                            nazwa = result.GetValue(1).ToString(),
+                            login = result.GetValue(2).ToString(),
+                            wydzial = result.GetValue(3).ToString()
+                        });
+                    }
+
+                    return rez;
+
+                }
+
+            }
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> AddUserRole([FromBody] Roleuzytkownika roleuzytkownika)
+        {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+            roleuzytkownika.DataPoczatku = DateTime.Now;
+            securitycontext.Roleuzytkownika.Add(roleuzytkownika);
+            await securitycontext.SaveChangesAsync();
+
+            //return CreatedAtAction("GetUsersInRole", new { id = roleuzytkownika.Id }, roleuzytkownika);
+            var user = _context.Kontakty.Where(u => u.Id == roleuzytkownika.IdUzytkownika).Select(u=>u).FirstOrDefault();
+
+            return Json(user);
+
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> RemoveUserRole([FromBody] Roleuzytkownika roletoremove)
+        {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
+            securitycontext.Database.ExecuteSqlCommand("update roleuzytkownika set datakonca = {0},odebral = {3}  where id_roli={1} and id_uzytkownika={2}",DateTime.Now, roletoremove.IdRoli, roletoremove.IdUzytkownika, roletoremove.Odebral);
+
+            //securitycontext.Roleuzytkownika.Remove(securitycontext.Roleuzytkownika.Where(a => a.IdRoli.Equals(roletoremove.IdRoli) && a.IdUzytkownika.Equals(roletoremove.IdUzytkownika)).Select(a => a).FirstOrDefault());
+            await securitycontext.SaveChangesAsync();
+
+            var user = _context.Kontakty.Where(u => u.Id == roletoremove.IdUzytkownika).Select(u => u).FirstOrDefault();
+            return Json(user);
+
+        }
+
+
+        [HttpGet]
+        public async Task<IEnumerable<UserRole>> GetAllUsers()
+        {
+    
+            using (var cxt = _context)
+            using (var cmd = cxt.Database.GetDbConnection().CreateCommand())
+            {
+                cmd.CommandText = " select id, coalesce(imie,'')+' '+coalesce(nazwisko,'') as nazwa,login, wydzial from ias.dbo.kontakty ";          
+
+                cxt.Database.OpenConnection();
+                using (var result = cmd.ExecuteReader())
+                {
+                    if (!result.HasRows)
+                        return null;
+
+                    List<UserRole> rez = new List<UserRole>();
+
+                    while (result.Read())
+                    {
+                        rez.Add(new UserRole()
+                        {
+                            id = result.GetValue(0).ToString(),
+                            nazwa = result.GetValue(1).ToString(),
+                            login = result.GetValue(2).ToString(),
+                            wydzial = result.GetValue(3).ToString()
+                        });
+                    }
+
+                    return rez;
+
+                }
+
+            }
+        }
+
+        [HttpGet]
+        public async Task<IEnumerable<Role>> GetRoleOffUser()
+        {
+            string id = Request.Query["id"];
+      
+            using (var cxt = _context)
+            using (var cmd = cxt.Database.GetDbConnection().CreateCommand())
+            {
+                cmd.CommandText = " select * from role where id not in(select id_roli from roleuzytkownika where id_uzytkownika = "+id+" and datakonca is null) ";
+
+                cxt.Database.OpenConnection();
+                using (var result = cmd.ExecuteReader())
+                {
+                    if (!result.HasRows)
+                        return null;
+
+                    List<Role> rez = new List<Role>();
+
+                    while (result.Read())
+                    {
+                        rez.Add(new Role()
+                        {
+                            Id = int.Parse(result.GetValue(0).ToString()),
+                            Rola = result.GetValue(1).ToString(),
+                  
+                        });
+                    }
+
+                    return rez;
+
+                }
+
+            }
+        }
+
+        [HttpGet]
+        public async Task<IEnumerable<Role>> GetUsersRoles()
+        {
+            string id = Request.Query["id"];
+
+            using (var cxt = _context)
+            using (var cmd = cxt.Database.GetDbConnection().CreateCommand())
+            {
+                cmd.CommandText = " select * from role where id in(select id_roli from roleuzytkownika where id_uzytkownika = " + id + " and datakonca is null) ";
+
+                cxt.Database.OpenConnection();
+                using (var result = cmd.ExecuteReader())
+                {
+                    if (!result.HasRows)
+                        return null;
+
+                    List<Role> rez = new List<Role>();
+
+                    while (result.Read())
+                    {
+                        rez.Add(new Role()
+                        {
+                            Id = int.Parse(result.GetValue(0).ToString()),
+                            Rola = result.GetValue(1).ToString(),
+
+                        });
+                    }
+
+                    return rez;
+
+                }
+
+            }
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> AddRoleToUser([FromBody] Roleuzytkownika roleuzytkownika)
+        {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+            roleuzytkownika.DataPoczatku = DateTime.Now;
+            securitycontext.Roleuzytkownika.Add(roleuzytkownika);
+            await securitycontext.SaveChangesAsync();
+
+            var user = securitycontext.Role.Where(u => u.Id == roleuzytkownika.IdRoli).Select(u=>u).FirstOrDefault();
+
+            return Json(user);
+
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> RemoveRoleFromUser([FromBody] Roleuzytkownika roletoremove)
+        {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
+            securitycontext.Database.ExecuteSqlCommand("update roleuzytkownika set datakonca = {0},odebral = {3}  where id_roli={1} and id_uzytkownika={2}", DateTime.Now, roletoremove.IdRoli, roletoremove.IdUzytkownika, roletoremove.Odebral);
+
+            //securitycontext.Roleuzytkownika.Remove(securitycontext.Roleuzytkownika.Where(a => a.IdRoli.Equals(roletoremove.IdRoli) && a.IdUzytkownika.Equals(roletoremove.IdUzytkownika)).Select(a => a).FirstOrDefault());
+            await securitycontext.SaveChangesAsync();
+
+            var user = securitycontext.Role.Where(u => u.Id == roletoremove.IdRoli).Select(u => u).FirstOrDefault();
+            return Json(user);
+
+        }
+
+        #region funkcje tworzenia rol na bazie
+
+        [HttpGet("{id}")]
+        public async Task<IActionResult> GetRola([FromRoute] long id)
+        {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
+            var rola = await securitycontext.Role.SingleOrDefaultAsync(m => m.Id == id);
+
+            if (rola == null)
+            {
+                return NotFound();
+            }
+
+            return Ok(rola);
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> AddRole([FromBody] Role rola)
+        {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+          
+            securitycontext.Role.Add(rola);
+            int newid = await securitycontext.SaveChangesAsync();
+
+            return CreatedAtAction("GetRola", new { id = rola.Id }, rola);
+
+        }
+
+        [HttpPut("{id}")]
+        public async Task<IActionResult> UpdateRole([FromRoute] long id, [FromBody] Role rola)
+        {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
+            if (id != rola.Id)
+            {
+                return BadRequest();
+            }
+
+    
+            securitycontext.Entry(rola).State = EntityState.Modified;
+
+            try
+            {
+                await securitycontext.SaveChangesAsync();
+            }
+            catch (DbUpdateConcurrencyException)
+            {
+                if (!RolaExists(id))
+                {
+                    return NotFound();
+                }
+                else
+                {
+                    throw;
+                }
+            }
+
+            return NoContent();
+        }
+
+        private bool RolaExists(long id)
+        => securitycontext.Role.Any(e => e.Id == id);
+
+        [HttpPost("{id}")]
+        public async Task<IActionResult> DelRole([FromRoute] long id)
+        {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
+            // _context.Database.SqlQuery("df");
+            var rola = await securitycontext.Role.SingleOrDefaultAsync(m => m.Id == id);
+            if (rola == null)
+            {
+                return NotFound();
+            }
+
+
+            securitycontext.Role.Remove(rola);
+            await securitycontext.SaveChangesAsync();
+
+            return Ok(rola);
+        }
+
+        #endregion
+
+
+    }
+
+    public class UserHistory
+    {
+        public string rola;
+        public string datanadania;
+        public string nadal;
+        public string dataodebrania;
+        public string odebral;
+    }
+
+    public class UserRole
+    {
+        public string id;
+        public string nazwa;
+        public string login;
+        public string wydzial;
     }
 }
