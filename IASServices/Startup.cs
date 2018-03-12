@@ -41,6 +41,7 @@ namespace IASServices
             services.AddDbContext<KontaktyContext>(o => o.UseSqlServer(Configuration.GetConnectionString("DelegacjeConnection")));
             services.AddDbContext<UpowaznieniaContext>(o => o.UseSqlServer(Configuration.GetConnectionString("DelegacjeConnection")));
             services.AddDbContext<IasSecurityContext>(o => o.UseSqlServer(Configuration.GetConnectionString("DelegacjeConnection")));
+            services.AddDbContext<GrafyContext>(o => o.UseSqlServer(Configuration.GetConnectionString("DelegacjeConnection")));
 
             services.AddScoped(typeof(IData<Delegacja, long>), typeof(DelegacjaRepository));
             // Add framework services.
