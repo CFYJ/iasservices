@@ -24,6 +24,8 @@ namespace IASServices.Controllers
         public InterpretacjeController(InterpretacjeContext context)
         {
             datacontext = context;
+
+            //logger("start");
         }
 
 
@@ -31,20 +33,25 @@ namespace IASServices.Controllers
         [HttpGet("{typ}/{arg}")]
         public async Task<IActionResult> GetList([FromRoute] string typ, [FromRoute] string arg)
         {
-            string searchString = " "+typ+" like '%" + arg + "%'";
+            try
+            {
+                string searchString = " " + typ + " like '%" + arg + "%'";
 
 
-            string query = "select id, nazwa,'' as rozszerzenie, " +
-                " null as plik, data, dbo.getSkrot('" + arg + "',tresc) as tresc, nipy from interFiles where " + searchString;
+                string query = "select id, nazwa,'' as rozszerzenie, " +
+                    " null as plik, data, dbo.getSkrot('" + arg + "',tresc) as tresc, nipy from interFiles where " + searchString;
 
-            var lista = await datacontext.InterFiles.FromSql(query).ToListAsync();
+                var lista = await datacontext.InterFiles.FromSql(query).ToListAsync();
 
-            var wynik = Json(lista);
+                var wynik = Json(lista);
 
-            return wynik;
+                return wynik;
+            }catch(Exception ex) { logger(ex.Message); return null; }
         }
 
 
+
+        #region stary download
         //[HttpGet("{id}")]
         //public FileResult FileDownload([FromRoute] string id)
         //{
@@ -59,16 +66,37 @@ namespace IASServices.Controllers
         //    }
         //    catch (Exception ex) { return null; };
         //}
+        #endregion
+
+
+        //[HttpGet("{id}")]
+        //public IActionResult FileDownload([FromRoute] string id)
+        //{
+        //    try
+        //    {
+        //        InterFiles file = datacontext.InterFiles.Where(f => f.Id == long.Parse(id)).First();
+
+        //        return new FileStreamResult(new MemoryStream(file.Plik), "application/"+file.Rozszerzenie);
+        //    }catch(Exception ex) { logger(ex.Message); return null; }
+        //}
+
 
         [HttpGet("{id}")]
-        public IActionResult FileDownload([FromRoute] string id)
+        public void FileDownload([FromRoute] string id)
         {
             try
             {
                 InterFiles file = datacontext.InterFiles.Where(f => f.Id == long.Parse(id)).First();
 
-                return new FileStreamResult(new MemoryStream(file.Plik), "application/"+file.Rozszerzenie);
-            }catch(Exception ex) { return null; }
+                //return new FileStreamResult(new MemoryStream(file.Plik), "application/" + file.Rozszerzenie);
+
+                Response.ContentType = "application/pdf";
+                Response.Headers.Add("Content-Disposition", "inline; filename=" +file.Nazwa+"."+file.Rozszerzenie);
+
+                Response.Body.Write(file.Plik, 0, file.Plik.Length);
+                
+            }
+            catch (Exception ex) { logger(ex.Message);  }
         }
 
 
@@ -79,6 +107,12 @@ namespace IASServices.Controllers
 
             datacontext.InterFiles.Add(new InterFiles() { Nazwa = "uploaded", Data = DateTime.Now, Nipy = "1111", Rozszerzenie = "pdf", Plik = plik });
             datacontext.SaveChanges();
+        }
+
+        private void logger(string info)
+        {
+            System.IO.File.AppendAllText("log.txt", "\r\n\r\n\r\n*********************** " + DateTime.Now.ToLongDateString());
+            System.IO.File.AppendAllText("log.txt", info);
         }
     }
 }
