@@ -114,28 +114,24 @@ namespace IASServices.Controllers
                 return null;
             }
 
-            if (rola.Role != "author") {
-                _grafycontext.GrafyRole.Remove(rola);
-                await _grafycontext.SaveChangesAsync();
-                return Ok("true");
+            _grafycontext.GrafyRole.Remove(rola);
+
+            if (rola.Typ == "katalog")
+            {
+                var lista = _grafycontext.GrafyRole.Where(r => r.IdParent == rola.Id).ToList();
+                foreach (GrafyRole child in lista)
+                    await DelGraf(child);
             }
 
             if (rola.Role == "author")
             {
-                var tmp =await _grafycontext.GrafyGraf.Where(g => g.Id == rola.IdGrafu).FirstAsync();
+                var tmp = await _grafycontext.GrafyGraf.Where(g => g.Id == rola.IdGrafu).FirstOrDefaultAsync();
                 if(tmp!=null)
-                _grafycontext.GrafyGraf.Remove(tmp);
-                await _grafycontext.SaveChangesAsync();
-                return Ok("true");
+                _grafycontext.GrafyGraf.Remove(tmp);   
             }
 
-           
-            //long newid = await _grafycontext.SaveChangesAsync();
-
-            //_grafycontext.GrafyRole.Add(new GrafyRole() { IdGrafu = graf.Id, Role = "author", User = user, Nazwa = graf.Nazwa });
-            //await _grafycontext.SaveChangesAsync();
-
-            return NotFound();
+            await _grafycontext.SaveChangesAsync();
+            return Ok("true");
 
         }
 
