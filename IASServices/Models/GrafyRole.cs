@@ -10,7 +10,7 @@ namespace IASServices.Models
         [Column("id")]
         public long Id { get; set; }
         [Column("id_grafu")]
-        public long IdGrafu { get; set; }
+        public long? IdGrafu { get; set; }
         [Column("user", TypeName = "varchar(50)")]
         public string User { get; set; }
         [Column("role", TypeName = "varchar(50)")]
