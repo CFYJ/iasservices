@@ -15,10 +15,12 @@ namespace IASServices.Controllers
     public class GrafyController : Controller
     {
         private readonly GrafyContext _grafycontext;
+        private readonly KontaktyContext kcontext;
 
-        public GrafyController(GrafyContext context)
+        public GrafyController(GrafyContext context, KontaktyContext kcontext)
         {
-            _grafycontext = context;
+            this._grafycontext = context;
+            this.kcontext = kcontext;
 
         }
 
@@ -46,9 +48,9 @@ namespace IASServices.Controllers
             var lista = await _grafycontext.GrafyGraf.Where(z => z.GrafyRole.Where(r => r.User == user).First() != null).ToListAsync();
 
             return lista;
-
-
         }
+
+        
 
         [HttpGet("{id}")]
         public async Task<GrafyGraf> GetGraf([FromRoute] long id)
@@ -171,6 +173,30 @@ namespace IASServices.Controllers
 
         private bool GrafyExists(long id)
          => _grafycontext.GrafyGraf.Any(e => e.Id == id);
+
+
+
+        [HttpGet("{id}")]
+        public async Task<IEnumerable<GrafyRole>> GetGrafyShares([FromRoute] long id, [FromBody] string user)
+        {
+            var lista = await _grafycontext.GrafyRole.Where(r => r.User == user && r.IdGrafu==id).ToListAsync();
+
+            if (lista.Count <= 0)
+                return null;
+
+            string logins = "";
+            foreach(GrafyRole g in lista)
+            {
+                if(g.User != user)
+                logins += "'" + g.User + "',";
+            }
+
+            lista
+
+
+
+            return lista;
+        }
 
     }
 }
