@@ -22,6 +22,8 @@ namespace IASServices.Models
         public string Opis { get; set; }
         [Column("xml", TypeName = "text")]
         public string Xml { get; set; }
+        [Column("opis2", TypeName = "varchar(max)")]
+        public string Opis2 { get; set; }
 
         [InverseProperty("IdGrafuNavigation")]
         public virtual ICollection<GrafyRole> GrafyRole { get; set; }

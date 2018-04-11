@@ -27,20 +27,29 @@ namespace IASServices.Controllers
         [HttpGet]
         public async Task<IEnumerable<GrafyGraf>> GetGrafyLista(string user)
         {
-            var lista = await _grafycontext.GrafyGraf.Where(z=>z.GrafyRole.Where(r=>r.User == user).First() != null).ToListAsync();
+            var lista = await _grafycontext.GrafyGraf.Where(z => z.GrafyRole.Where(r => r.User == user).First() != null).ToListAsync();
 
             return lista;
 
 
         }
 
-        [HttpGet("{id}")]
-        public async Task<IEnumerable<GrafyRole>> GetUsersGrafsTree([FromRoute] long id)
+        //[HttpGet("{id}")]
+        //public async Task<IEnumerable<GrafyRole>> GetUsersGrafsTree([FromRoute] long id)
+        //{
+        //    var lista = await _grafycontext.GrafyRole.ToListAsync();
+
+        //    return lista;
+        //}
+
+        [HttpGet("{user}")]
+        public async Task<IEnumerable<GrafyRole>> GetUsersGrafsTree([FromRoute] string user)
         {
-            var lista = await _grafycontext.GrafyRole.ToListAsync();
+            var lista = await _grafycontext.GrafyRole.Where(gr=>gr.User==user).ToListAsync();
 
             return lista;
         }
+
 
         [HttpGet]
         public async Task<IEnumerable<GrafyGraf>> GetGrafyTree(string user)
@@ -50,12 +59,12 @@ namespace IASServices.Controllers
             return lista;
         }
 
-        
+
 
         [HttpGet("{id}")]
         public async Task<GrafyGraf> GetGraf([FromRoute] long id)
         {
-            var lista = await _grafycontext.GrafyGraf.Where(z => z.Id  == id).FirstOrDefaultAsync();
+            var lista = await _grafycontext.GrafyGraf.Where(z => z.Id == id).FirstOrDefaultAsync();
 
             return lista;
         }
@@ -68,27 +77,32 @@ namespace IASServices.Controllers
             {
                 return null;
             }
-            if(rola.Typ == "katalog")
+            if (rola.Typ == "katalog")
             {
                 _grafycontext.GrafyRole.Add(new GrafyRole()
                 {
-                    IdGrafu =null,
+                    IdGrafu = null,
                     IdParent = rola.IdParent,
                     Nazwa = rola.Nazwa,
                     Typ = rola.Typ,
                     Role = rola.Role,
+                    User = rola.User.ToUpper(),
                 });
-                await _grafycontext.SaveChangesAsync();     
+                await _grafycontext.SaveChangesAsync();
 
                 return rola.Id;
             }
             else
             {
-                GrafyGraf tmpgr = new GrafyGraf() { DataUtworzenia = DateTime.Now, Nazwa = rola.Nazwa };
-                _grafycontext.GrafyGraf.Add(tmpgr);
-                 await _grafycontext.SaveChangesAsync();
+                if (rola.IdGrafu == null || rola.IdGrafu == 0)
+                {
+                    GrafyGraf tmpgr = new GrafyGraf() { DataUtworzenia = DateTime.Now, Nazwa = rola.Nazwa };
+                    _grafycontext.GrafyGraf.Add(tmpgr);
+                    await _grafycontext.SaveChangesAsync();
 
-                rola.IdGrafu = tmpgr.Id;
+                    rola.IdGrafu = tmpgr.Id;
+                }
+                rola.User = rola.User.ToUpper();
                 _grafycontext.GrafyRole.Add(rola);
                 await _grafycontext.SaveChangesAsync();
 
@@ -108,32 +122,50 @@ namespace IASServices.Controllers
 
         }
 
-        [HttpPost]
-        public async Task<IActionResult> DelGraf([FromBody] GrafyRole rola)
+        [HttpPost("{id}")]
+        //public async Task<IActionResult> DelGraf([FromBody] GrafyRole rola)
+        public async Task<IActionResult> DelGraf(long id)
         {
-            if (!ModelState.IsValid)
+            //if (!ModelState.IsValid)
+            //{
+            //    return null;
+            //}
+
+            GrafyRole rola = _grafycontext.GrafyRole.Where(r => r.Id == id).FirstOrDefault();
+
+            if (rola != null)
             {
-                return null;
+
+                _grafycontext.GrafyRole.Remove(rola);
+
+                if (rola.Typ == "katalog")
+                {
+                    var lista = _grafycontext.GrafyRole.Where(r => r.IdParent == rola.Id).ToList();
+                    foreach (GrafyRole child in lista)
+                        await DelGraf(child.Id);
+                }
+                else
+                {
+                    if (_grafycontext.GrafyRole.Where(r => r.IdGrafu == rola.IdGrafu).ToList().Count == 1)
+                    {
+                        var tmp = await _grafycontext.GrafyGraf.Where(g => g.Id == rola.IdGrafu).FirstOrDefaultAsync();
+                        if (tmp != null)
+                            _grafycontext.GrafyGraf.Remove(tmp);
+                    }
+
+                }
+
+                //if (rola.Role == "author")
+                //{                
+                //    var tmp = await _grafycontext.GrafyGraf.Where(g => g.Id == rola.IdGrafu).FirstOrDefaultAsync();
+                //    if (tmp != null)
+                //        _grafycontext.GrafyGraf.Remove(tmp);
+                //}
+
+                await _grafycontext.SaveChangesAsync();
+                return Ok("true");
             }
-
-            _grafycontext.GrafyRole.Remove(rola);
-
-            if (rola.Typ == "katalog")
-            {
-                var lista = _grafycontext.GrafyRole.Where(r => r.IdParent == rola.Id).ToList();
-                foreach (GrafyRole child in lista)
-                    await DelGraf(child);
-            }
-
-            if (rola.Role == "author")
-            {
-                var tmp = await _grafycontext.GrafyGraf.Where(g => g.Id == rola.IdGrafu).FirstOrDefaultAsync();
-                if(tmp!=null)
-                _grafycontext.GrafyGraf.Remove(tmp);   
-            }
-
-            await _grafycontext.SaveChangesAsync();
-            return Ok("true");
+            return null;
 
         }
 
@@ -176,27 +208,102 @@ namespace IASServices.Controllers
 
 
 
-        [HttpGet("{id}")]
-        public async Task<IEnumerable<GrafyRole>> GetGrafyShares([FromRoute] long id, [FromBody] string user)
+        [HttpGet]
+        public async Task<IEnumerable<UserInShare>> GetUsersInShare()
         {
-            var lista = await _grafycontext.GrafyRole.Where(r => r.User == user && r.IdGrafu==id).ToListAsync();
+            long id = long.Parse(Request.Query["id"]);
+            string user = Request.Query["user"];
 
-            if (lista.Count <= 0)
-                return null;
-
-            string logins = "";
-            foreach(GrafyRole g in lista)
+            using (var cxt = _grafycontext)
+            using (var cmd = cxt.Database.GetDbConnection().CreateCommand())
             {
-                if(g.User != user)
-                logins += "'" + g.User + "',";
+                cmd.CommandText = "select g.id,g.role, coalesce(k.Imie,'')+' '+coalesce(k.Nazwisko,'') as osoba, coalesce(k.Wydzial,'') "
+                                    + "from GrafyRole g left "
+                                    + "join Kontakty k on g.[user] = k.Login "
+                                    + "where g.id_grafu = " + id + " and g.[user]<>'" + user + "'";
+
+
+                cxt.Database.OpenConnection();
+                using (var result = cmd.ExecuteReader())
+                {
+                    if (!result.HasRows)
+                        return null;
+
+                    List<UserInShare> rez = new List<UserInShare>();
+
+                    while (result.Read())
+                    {
+                        rez.Add(new UserInShare()
+                        {
+                            id = result.GetValue(0).ToString(),
+                            rola = result.GetValue(1).ToString(),
+                            osoba = result.GetValue(2).ToString(),
+                            wydzial = result.GetValue(3).ToString(),
+                        });
+                    }
+
+                    return rez;
+
+                }
+
             }
+        }
 
-            lista
+        [HttpGet("{part}")]
+        public async Task<IEnumerable<UserToShare>> GetUsersToShare([FromRoute] string part)
+        {
+    
+        
+            using (var cxt = _grafycontext)
+            using (var cmd = cxt.Database.GetDbConnection().CreateCommand())
+            {
+                cmd.CommandText = "select * from( "
+                                  +"select login, coalesce(Imie, '')+' ' + coalesce(Nazwisko, '') as osoba, coalesce(Wydzial, '') as wydzial from Kontakty)zz "
+                                  +"where osoba like '%"+part+"%'";
+
+
+                cxt.Database.OpenConnection();
+                using (var result = cmd.ExecuteReader())
+                {
+                    if (!result.HasRows)
+                        return null;
+
+                    List<UserToShare> rez = new List<UserToShare>();
+
+                    while (result.Read())
+                    {
+                        rez.Add(new UserToShare()
+                        {
+                            id = result.GetValue(0).ToString(),                           
+                            osoba = result.GetValue(1).ToString(),
+                            wydzial = result.GetValue(2).ToString(),
+                        });
+                    }
+
+                    return rez;
+
+                }
+
+            }
+        }
 
 
 
-            return lista;
+        public class UserInShare
+        {
+            public string id;
+            public string rola;
+            public string osoba;       
+            public string wydzial;
+          
+        }
+        public class UserToShare
+        {
+            public string id;
+            public string osoba;
+            public string wydzial;
         }
 
     }
+
 }

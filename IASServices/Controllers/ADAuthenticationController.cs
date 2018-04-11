@@ -81,7 +81,7 @@ namespace IASServices.Controllers
             catch (DirectoryServicesCOMException) { return Unauthorized(); }
 
             }
-            return Ok(new { Token = CreateToken(new ADUser() { Name = home_user }) });
+            return Ok(new { Token = CreateToken(new ADUser() { Name = user.Name==null? home_user: user.Name }) });
         }
 
 
