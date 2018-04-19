@@ -12,6 +12,8 @@ using System.Configuration;
 using System.Text.RegularExpressions;
 
 using System.Data;
+using System.Web;
+using System.Net.Mail;
 
 namespace HelpDeskService
 {
@@ -96,6 +98,63 @@ namespace HelpDeskService
             return 0;
         }
 
+
+        private static string Decode(string input, string charSet)
+        {
+            if (string.IsNullOrEmpty(charSet))
+            {
+                var charSetOccurences = new Regex(@"=\?.*\?Q\?", RegexOptions.IgnoreCase);
+                var charSetMatches = charSetOccurences.Matches(input);
+                foreach (Match match in charSetMatches)
+                {
+                    charSet = match.Groups[0].Value.Replace("=?", "").Replace("?Q?", "");
+                    input = input.Replace(match.Groups[0].Value, "").Replace("?=", "");
+                }
+            }
+
+            Encoding enc = new ASCIIEncoding();
+            if (!string.IsNullOrEmpty(charSet))
+            {
+                try
+                {
+                    enc = Encoding.GetEncoding(charSet);
+                }
+                catch
+                {
+                    enc = new ASCIIEncoding();
+                }
+            }
+
+            //decode iso-8859-[0-9]
+            var occurences = new Regex(@"=[0-9a-zA-Z]{2}", RegexOptions.Multiline);
+            var matches = occurences.Matches(input);
+            foreach (Match match in matches)
+            {
+                try
+                {
+                    byte[] b = new byte[] { byte.Parse(match.Groups[0].Value.Substring(1), System.Globalization.NumberStyles.AllowHexSpecifier) };
+                    char[] hexChar = enc.GetChars(b);
+                    input = input.Replace(match.Groups[0].Value, hexChar[0].ToString());
+                }
+                catch
+                {; }
+            }
+
+            //decode base64String (utf-8?B?)
+            occurences = new Regex(@"\?utf-8\?B\?.*\?", RegexOptions.IgnoreCase);
+            matches = occurences.Matches(input);
+            foreach (Match match in matches)
+            {
+                byte[] b = Convert.FromBase64String(match.Groups[0].Value.Replace("?utf-8?B?", "").Replace("?UTF-8?B?", "").Replace("?", ""));
+                string temp = Encoding.UTF8.GetString(b);            
+                input = input.Replace(match.Groups[0].Value, temp);
+            }
+
+            input = input.Replace("=\r\n", "").Replace("š","ą").Replace("Ľ","Ą");
+
+            return input;
+        }
+
         private void getMessages()
         {
             var pop = connect();
@@ -107,59 +166,28 @@ namespace HelpDeskService
                 {
                     try
                     {
-                        OpenPop.Mime.Message message = pop.GetMessage(msg);
-
-                        string body = System.Text.Encoding.Default.GetString(message.RawMessage);
-
-                        string pat = @"<html>(.*)</html>";
-
-                        Regex r = new Regex(pat, RegexOptions.Singleline);
-
-                        Match m = r.Match(body);
-                        int count = 0;
-                        while (m.Success)
+                        for (int i = msg; i > 0; i--)
                         {
-                            string rez = m.Value;
 
-                            System.Data.SqlClient.SqlConnection conn = new System.Data.SqlClient.SqlConnection(ConfigurationManager.ConnectionStrings["helpdesk"].ConnectionString);
-                            conn.Open();
-                            if (conn.State == ConnectionState.Open)
-                            {
-                                System.Data.SqlClient.SqlCommand query = new System.Data.SqlClient.SqlCommand(@"insert into HelpDeskInfo (tresc) values(' " + rez + "')", conn);
-
-                                query.ExecuteNonQuery();
-
-                                //pop.DeleteMessage(msg);
-
-                                conn.Close();
-                            }
-
-                            m.NextMatch();
+                            OpenPop.Mime.Message message = pop.GetMessage(i);
+                       
+                            if (message.MessagePart.MessageParts != null)
+                                foreach (OpenPop.Mime.MessagePart msgpart in message.MessagePart.MessageParts)
+                                {
+                                    if (msgpart.Body != null)
+                                    {
+                                        if (msgpart.FileName.Contains("Forwarded") || msgpart.ContentType.MediaType.Contains("html"))
+                                            parseMessage(msgpart.Body);
+                                    }
+                                }
                         }
 
+
+                        //if(message.RawMessage)
+
+
                         var stop = 0;
-
-                        //char[] charArray = message.Headers.Subject.ToCharArray();
-                        //Array.Reverse(charArray);
-                        //string plik = new string(charArray);
-
-                        //plik = message.Headers.Subject.Substring(plik.Length - plik.IndexOf(' '));
-                        //plik = plik.Replace(@"\", "_");
-                        //plik = plik.Replace(@"/", "_");
-
-                        //int at = 0;
-                        //foreach (OpenPop.Mime.MessagePart mp in pop.GetMessage(msg).FindAllAttachments())
-                        //{
-                        //    if (mp.IsAttachment && !mp.ContentType.MediaType.Contains("image"))
-                        //    {
-                        //        mp.SaveToFile(new System.IO.FileInfo(filestorage + plik + "_" + at.ToString() + ".pdf"));
-                        //        writeLog(message.Headers.Subject + "  -   " + mp.FileName);
-                        //    }
-
-                        //    at++;
-                        //}
-
-                       
+                        //pop.DeleteMessage(msg);
                     }
                     catch (Exception ex) { writeLog(ex.Message); Thread.Sleep(5000); };
                 }
@@ -168,12 +196,111 @@ namespace HelpDeskService
             }
         }
 
+        private void parseMessage(byte[] msgbody)
+        {
+            string body = System.Text.Encoding.Default.GetString(msgbody);
+
+
+            string text = Decode(body, "ISO-8859-2");
+            body = text;
+
+            //string opisPat= "(<td colspan=\"4\" align=\"left\">OPIS)(.*?)</td>";
+            string zgloszeniePat = "(<td colspan=\"4\" align=\"left\">OPIS)(.*?)(<p>(.*?)</p>)(.*?)</td>";
+            string zgloszenie = (new Regex(zgloszeniePat, RegexOptions.Singleline)).Match(body).Groups[3].Value;
+
+            //string dataZgPat = @"(?<1>(<td[^>]*>ZAREJESTROWANO.*?</td>)(\s*)(<td.*?</td>))";
+            string dataZgPat = @"(?<1>(<td[^>]*>ZAREJESTROWANO.*?</td>)(\s*)(<td[^>]*>(.*?)</td>))";
+            string dataZg = (new Regex(dataZgPat, RegexOptions.Singleline)).Match(body).Groups[4].Value;
+
+
+            string nrZgPat = @"(?<1>(<td[^>]*>NR.*?</td>)(\s*)(<td[^>]*>(.*?)</td>))";
+            string nrZg = (new Regex(nrZgPat, RegexOptions.Singleline)).Match(body).Groups[4].Value;
+
+            string tematPat = @"(?<1>(<td[^>]*>TEMAT.*?</td>)(\s*)(<td[^>]*>(.*?)</td>))";
+            string tematZg = (new Regex(tematPat, RegexOptions.Singleline)).Match(body).Groups[4].Value;
+
+            string statusPat = @"(?<1>(<td[^>]*>STATUS.*?</td>)(\s*)(<td[^>]*>(.*?)</td>))";
+            string statusZg = (new Regex(statusPat, RegexOptions.Singleline)).Match(body).Groups[4].Value;
+
+            string zglaszajacyPat = @"(?<1>(<td[^>]*>ZGŁASZAJĄCY.*?</td>)(\s*)(<td[^>]*>(.*?)</td>))";
+            string zglaszajacyZg = (new Regex(zglaszajacyPat, RegexOptions.Singleline)).Match(body).Groups[4].Value;
+
+
+            //string pat = @"<html><table(.*)</table></html>";                 
+            //string pat = @"<body[^>]*>(.*)</body>";
+            //string trescPat = @"<body.*?(<table.*</table>).*?</body>";
+            //string tresc = (new Regex(trescPat, RegexOptions.Singleline)).Match(body).Groups[1].Value;
+            string trescPat = "<td[^>]*>Zgłoszenie.*?<table.*</table>";
+            string tresc = (new Regex(trescPat, RegexOptions.Singleline)).Match(body).Value;
+
+            trescPat = "<table.*</table>";
+            tresc = (new Regex(trescPat, RegexOptions.Singleline)).Match(tresc).Value;
+
+            //Regex r = new Regex(trescPat, RegexOptions.Singleline);
+
+            //Match m = r.Match(body);
+            //while (m.Success)
+            //{
+            //    string rez = m.Groups[1].Value;
+
+
+            try
+            {
+                System.Data.SqlClient.SqlConnection conn = new System.Data.SqlClient.SqlConnection(ConfigurationManager.ConnectionStrings["helpdesk"].ConnectionString);
+                conn.Open();
+                if (conn.State == ConnectionState.Open)
+                {
+                    string querystring = @"insert into HelpDeskInfo (tresc, zgloszenie, data, nr, temat, zglaszajacy,datarejestracji,status) " +
+                        "values('" + tresc.Replace("'","\"") + "', '" + zgloszenie.Replace("'", "\"") + "' ,getdate(), '" + nrZg.Replace("'", "\"") + "','" + tematZg.Replace("'", "\"") + "','" + zglaszajacyZg.Replace("'", "\"") + "','" + dataZg.Replace("'", "\"") + "','" + statusZg.Replace("'", "\"") + "')";
+                    System.Data.SqlClient.SqlCommand query = new System.Data.SqlClient.SqlCommand(querystring, conn);
+
+                    query.ExecuteNonQuery();
+
+
+
+                    conn.Close();
+                }
+
+            }
+            catch (Exception ex) { writeLog(ex.Message); Thread.Sleep(1000); }
+
+            //    m=m.NextMatch();
+            //}
+
+
+
+        }
+
+   
+
         private void writeLog(string text)
         {
             System.IO.File.AppendAllText(ConfigurationManager.AppSettings["logstorage"].ToString(), "\r\n" + text);
         }
 
 
+        #region odczyt pliku
+        //char[] charArray = message.Headers.Subject.ToCharArray();
+        //Array.Reverse(charArray);
+        //string plik = new string(charArray);
+
+        //plik = message.Headers.Subject.Substring(plik.Length - plik.IndexOf(' '));
+        //plik = plik.Replace(@"\", "_");
+        //plik = plik.Replace(@"/", "_");
+
+        //int at = 0;
+        //foreach (OpenPop.Mime.MessagePart mp in pop.GetMessage(msg).FindAllAttachments())
+        //{
+        //    if (mp.IsAttachment && !mp.ContentType.MediaType.Contains("image"))
+        //    {
+        //        mp.SaveToFile(new System.IO.FileInfo(filestorage + plik + "_" + at.ToString() + ".pdf"));
+        //        writeLog(message.Headers.Subject + "  -   " + mp.FileName);
+        //    }
+
+        //    at++;
+        //}
+
+        #endregion
 
     }
 }
