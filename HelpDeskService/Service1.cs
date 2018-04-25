@@ -162,32 +162,26 @@ namespace HelpDeskService
             int msg = 0;
             if (pop.Connected)
             {
+
                 while ((msg = pop.GetMessageCount()) > 0)
                 {
                     try
                     {
-                        for (int i = msg; i > 0; i--)
-                        {
 
-                            OpenPop.Mime.Message message = pop.GetMessage(i);
-                       
-                            if (message.MessagePart.MessageParts != null)
-                                foreach (OpenPop.Mime.MessagePart msgpart in message.MessagePart.MessageParts)
+                        OpenPop.Mime.Message message = pop.GetMessage(msg);
+
+                        if (message.MessagePart.MessageParts != null)
+                            foreach (OpenPop.Mime.MessagePart msgpart in message.MessagePart.MessageParts)
+                            {
+                                if (msgpart.Body != null)
                                 {
-                                    if (msgpart.Body != null)
-                                    {
-                                        if (msgpart.FileName.Contains("Forwarded") || msgpart.ContentType.MediaType.Contains("html"))
-                                            parseMessage(msgpart.Body);
-                                    }
+                                    if (msgpart.FileName.Contains("Forwarded") || msgpart.ContentType.MediaType.Contains("html"))
+                                        parseMessage(msgpart.Body);
                                 }
-                        }
+                            }
 
 
-                        //if(message.RawMessage)
-
-
-                        var stop = 0;
-                        //pop.DeleteMessage(msg);
+                        pop.DeleteMessage(msg);
                     }
                     catch (Exception ex) { writeLog(ex.Message); Thread.Sleep(5000); };
                 }
@@ -236,38 +230,19 @@ namespace HelpDeskService
             trescPat = "<table.*</table>";
             tresc = (new Regex(trescPat, RegexOptions.Singleline)).Match(tresc).Value;
 
-            //Regex r = new Regex(trescPat, RegexOptions.Singleline);
 
-            //Match m = r.Match(body);
-            //while (m.Success)
-            //{
-            //    string rez = m.Groups[1].Value;
-
-
-            try
+            System.Data.SqlClient.SqlConnection conn = new System.Data.SqlClient.SqlConnection(ConfigurationManager.ConnectionStrings["helpdesk"].ConnectionString);
+            conn.Open();
+            if (conn.State == ConnectionState.Open)
             {
-                System.Data.SqlClient.SqlConnection conn = new System.Data.SqlClient.SqlConnection(ConfigurationManager.ConnectionStrings["helpdesk"].ConnectionString);
-                conn.Open();
-                if (conn.State == ConnectionState.Open)
-                {
-                    string querystring = @"insert into HelpDeskInfo (tresc, zgloszenie, data, nr, temat, zglaszajacy,datarejestracji,status) " +
-                        "values('" + tresc.Replace("'","\"") + "', '" + zgloszenie.Replace("'", "\"") + "' ,getdate(), '" + nrZg.Replace("'", "\"") + "','" + tematZg.Replace("'", "\"") + "','" + zglaszajacyZg.Replace("'", "\"") + "','" + dataZg.Replace("'", "\"") + "','" + statusZg.Replace("'", "\"") + "')";
-                    System.Data.SqlClient.SqlCommand query = new System.Data.SqlClient.SqlCommand(querystring, conn);
+                string querystring = @"insert into HelpDeskInfo (tresc, zgloszenie, data, nr, temat, zglaszajacy,datarejestracji,status) " +
+                    "values('" + tresc.Replace("'","\"") + "', '" + zgloszenie.Replace("'", "\"") + "' ,getdate(), '" + nrZg.Replace("'", "\"") + "','" + tematZg.Replace("'", "\"") + "','" + zglaszajacyZg.Replace("'", "\"") + "','" + dataZg.Replace("'", "\"") + "','" + statusZg.Replace("'", "\"") + "')";
+                System.Data.SqlClient.SqlCommand query = new System.Data.SqlClient.SqlCommand(querystring, conn);
 
-                    query.ExecuteNonQuery();
+                query.ExecuteNonQuery();
 
-
-
-                    conn.Close();
-                }
-
+                conn.Close();
             }
-            catch (Exception ex) { writeLog(ex.Message); Thread.Sleep(1000); }
-
-            //    m=m.NextMatch();
-            //}
-
-
 
         }
 
