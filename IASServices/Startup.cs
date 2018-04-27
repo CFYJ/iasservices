@@ -42,6 +42,8 @@ namespace IASServices
             services.AddDbContext<UpowaznieniaContext>(o => o.UseSqlServer(Configuration.GetConnectionString("DelegacjeConnection")));
             services.AddDbContext<IasSecurityContext>(o => o.UseSqlServer(Configuration.GetConnectionString("DelegacjeConnection")));
             services.AddDbContext<GrafyContext>(o => o.UseSqlServer(Configuration.GetConnectionString("DelegacjeConnection")));
+            services.AddDbContext<InterpretacjeContext>(o => o.UseSqlServer(Configuration.GetConnectionString("InterpretacjeConnection")));
+            services.AddDbContext<HelpDeskContext>(o => o.UseSqlServer(Configuration.GetConnectionString("LubelskaIasConnection")));
 
             services.AddScoped(typeof(IData<Delegacja, long>), typeof(DelegacjaRepository));
             // Add framework services.

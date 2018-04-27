@@ -39,17 +39,57 @@ namespace IASServices.Controllers
         }
 
         [HttpGet]
-        public async Task<IEnumerable<Upowaznienia>> GetUpowaznieniaLista()
+        //Task<IEnumerable<Upowaznienia>> 
+        public async Task<IActionResult> GetUpowaznieniaLista()
         {
-       
-            var zapytanie = Request.Query["pagesize"];
-            //var queryString = HttpContext.Request.Query;
-            //return _context.Upowaznienia.FromSql("select top 3 * from upowaznienia").ToList();
-            var lista = await _context.Upowaznienia.Include(pliki =>pliki.UpowaznieniaPliki).ToListAsync();
-        
-            return lista;
-        
-  
+
+            //var zapytanie = Request.Query["pagesize"];
+            ////var queryString = HttpContext.Request.Query;
+            ////return _context.Upowaznienia.FromSql("select top 3 * from upowaznienia").ToList();
+            //var lista = await _context.Upowaznienia.Include(pliki =>pliki.UpowaznieniaPliki).ToListAsync();
+
+            //return lista;
+            //******************************************
+
+            var r = Request;
+
+            int pagesize, pagenum, recordstartindex = 0;
+
+            int.TryParse(r.Query["pagesize"], out pagesize);
+            int.TryParse(r.Query["pagenum"], out pagenum);
+            int.TryParse(r.Query["recordstartindex"], out recordstartindex);
+
+            int startrow = recordstartindex;
+            int endrow = recordstartindex + pagesize;
+
+
+            string conditions = FilterClass.getFilters(r.Query);
+
+
+            //var lista = await hdcontext.HelpDeskInfo.ToListAsync();
+
+            string query = "select id, nazwa,nazwa_skrocona,wniosek_nadania_upr" +
+                ",nadajacy_upr,prowadzacy_rejestr_uzyt,wniosek_odebrania_upr, " +
+                "odbierajacy_upr,opiekun,adres_email,decyzja,uwagi  from(" +
+                "select * from(" +
+                "select *,ROW_NUMBER() OVER(ORDER BY id asc) AS Row from upowaznienia" + conditions +
+                ") as p1 where row between " + startrow + " and " + endrow +
+                ")as zz";
+            var lista = await _context.Upowaznienia.FromSql(query).Include(pliki => pliki.UpowaznieniaPliki).ToListAsync();
+
+
+
+
+            var res = new
+            {
+                TotalRows = _context.Upowaznienia.FromSql("select * from upowaznienia" + conditions).Count(),
+                Rows = lista
+            };
+
+            var wynik = Json(res);
+
+            return wynik;
+
         }
 
 

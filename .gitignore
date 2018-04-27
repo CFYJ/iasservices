@@ -264,3 +264,4 @@ IASServices/app.config
 IASServices/Properties/launchSettings.json
 IASServices/Properties/launchSettings.json
 IASServices/IASServices.csproj
+HelpDeskService/App.config
