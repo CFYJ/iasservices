@@ -19,10 +19,49 @@ namespace IASServices.Controllers
         }
 
         [HttpGet]
-        public async Task<IEnumerable<Kontakty>> GetKontakty()
+        //Task<IEnumerable<Kontakty>> 
+        public async Task<IActionResult> GetKontakty()
         {
-            //var queryString = HttpContext.Request.Query;
-            return await _context.Kontakty.ToListAsync();
+            
+            //return await _context.Kontakty.ToListAsync();
+            //***********************************************
+
+            var r = Request;
+
+            int pagesize, pagenum, recordstartindex = 0;
+
+            int.TryParse(r.Query["pagesize"], out pagesize);
+            int.TryParse(r.Query["pagenum"], out pagenum);
+            int.TryParse(r.Query["recordstartindex"], out recordstartindex);
+
+            int startrow = recordstartindex;
+            int endrow = recordstartindex + pagesize;
+
+
+            string conditions = FilterClass.getFilters(r.Query);
+
+
+            //var lista = await hdcontext.HelpDeskInfo.ToListAsync();
+
+            string query = "select id,imie, nazwisko, jednostka,miejsce_pracy,pion,wydzial,wydzial_podlegly,stanowisko,pokoj,email,telefon,komorka,login,wewnetrzny from(" +
+                "select * from(" +
+                "select *,ROW_NUMBER() OVER(ORDER BY id asc) AS Row from kontakty" + conditions +
+                ") as p1 where row between " + startrow + " and " + endrow +
+                ")as zz";
+            var lista = await _context.Kontakty.FromSql(query).ToListAsync();
+
+
+
+
+            var res = new
+            {
+                TotalRows = _context.Kontakty.FromSql("select * from kontakty" + conditions).Count(),
+                Rows = lista
+            };
+
+            var wynik = Json(res);
+
+            return wynik;
         }
 
         // GET: api/Kontakties/5
