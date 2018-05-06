@@ -9,6 +9,14 @@ using System.Linq;
 using System.Threading.Tasks;
 
 using System.Configuration;
+using Microsoft.AspNetCore.Authorization;
+using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
+using Microsoft.IdentityModel.Tokens;
+using System.Text;
+
+using Newtonsoft.Json;
+using System.Security.Principal;
 
 namespace IASServices.Controllers
 {
@@ -66,6 +74,7 @@ namespace IASServices.Controllers
         }
 
         [HttpPut]
+        [AllowAnonymous]
         public IActionResult JwtAuthenticate1([FromBody] ADUser user)
         {
            
@@ -109,36 +118,85 @@ namespace IASServices.Controllers
         /// </summary>
         /// <param name="user"></param>        
         /// <returns></returns>
+   
         public string CreateToken(ADUser user)
         {
-            var unixEpoch = new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc);
-            //var expiry = Math.Round((DateTime.UtcNow.AddHours(2) - unixEpoch).TotalSeconds);
-            var expiry = Math.Round((DateTime.UtcNow.AddMinutes(10) - unixEpoch).TotalSeconds);
-            var issuedAt = Math.Round((DateTime.UtcNow - unixEpoch).TotalSeconds);
-            var notBefore = Math.Round((DateTime.UtcNow.AddMonths(6) - unixEpoch).TotalSeconds);
+            //var unixEpoch = new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc);        
+            //var expiry = Math.Round((DateTime.UtcNow.AddMinutes(10) - unixEpoch).TotalSeconds);
+            //var issuedAt = Math.Round((DateTime.UtcNow - unixEpoch).TotalSeconds);
+            //var notBefore = Math.Round((DateTime.UtcNow.AddMonths(6) - unixEpoch).TotalSeconds);
+
             var userData = GetUserData(user);
             var role = GetUserRole(userData);
             var securityrole = GetSecurityUserRole(userData);
-
-            var payload = new Dictionary<string, object>
+            var scrole = securityrole.Split(',');
+            string[] tmp = new string[scrole.Length];
+            int i = 0;
+            foreach (string sc in scrole)
             {
-                {"name", user.Name},
-                //{"userId", user.Id},
-                {"role", role},
-                {"userData", userData},
-                //{"sub", user.Id},
-                {"nbf", notBefore},
-                {"iat", issuedAt},
-                {"exp", expiry},
-                {"securityrole", securityrole }
-            };
+                tmp[i] = sc.Trim();
+                i++;
+            }
+            scrole = tmp;
 
-            //var secret = ConfigurationManager.AppSettings.Get("jwtKey");
+            //var payload = new Dictionary<string, object>
+            //{
+            //    {"name", user.Name},
+            //    {"user",  user.Name},
+            //    //{"userId", user.Id},
+            //    {"role", role},
+            //    {"userData", userData},
+            //    //{"sub", user.Id},
+            //    {"nbf", notBefore},
+            //    {"iat", issuedAt},
+            //    {"exp", expiry},
+            //    {"securityrole", securityrole },      
+            //};
+
+          
             const string apikey = "VeryCompl!c@teSecretKey";
+             
+            //var token = JsonWebToken.Encode(payload, apikey, JwtHashAlgorithm.HS256);
+            //return token;
 
-            var token = JsonWebToken.Encode(payload, apikey, JwtHashAlgorithm.HS256);
-            //var token = "";
-            return token;
+
+
+            /////**********************
+
+            List<Claim> claims = new List<Claim>()
+                {
+                  new Claim(JwtRegisteredClaimNames.Sub,  user.Name, ClaimValueTypes.String, "http://127.0.0.1:5000"),
+                  new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString(), ClaimValueTypes.String,  "http://127.0.0.1:5000"),                     
+                  new Claim(ClaimTypes.Name, user.Name),     
+                  //new Claim(ClaimTypes.UserData, JsonConvert.SerializeObject(userData)),
+                  new Claim("name", user.Name),
+                  new Claim("user",  user.Name),
+                  new Claim("userData", JsonConvert.SerializeObject(userData))
+                };
+            
+            foreach (string rola in scrole)
+                claims.Add(new Claim(ClaimTypes.Role, rola, "http://127.0.0.1:5000"));
+            
+
+            var securityKey = new SymmetricSecurityKey(Encoding.ASCII.GetBytes(apikey));
+            var jwt = new JwtSecurityToken(
+               issuer: "http://127.0.0.1:5000",
+               audience: "http://127.0.0.1:5000",       
+               claims: claims,
+               expires: DateTime.UtcNow.AddMinutes(10),
+               signingCredentials: new SigningCredentials(securityKey, SecurityAlgorithms.HmacSha256));
+
+            var encodedJwt = new JwtSecurityTokenHandler().WriteToken(jwt);
+
+            ////var json = JsonConvert.SerializeObject(response, new JsonSerializerSettings
+            ////{
+            ////    Formatting = Formatting.Indented
+            ////});
+            return encodedJwt;
+            /////***********************
+
+
+          
         }
 
         private string GetUserRole(Kontakty userData)

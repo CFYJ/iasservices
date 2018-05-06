@@ -8,11 +8,14 @@ using Microsoft.EntityFrameworkCore;
 
 using IASServices.Models;
 using System.Reflection;
+using Microsoft.AspNetCore.Authorization;
+using JWT;
 
 namespace IASServices.Controllers
 {
     [Produces("application/json")]
     [Route("api/[controller]/[action]")]
+    //[Authorize]
     public class HelpDeskController : Controller
     {
         private readonly HelpDeskContext hdcontext;
@@ -25,9 +28,13 @@ namespace IASServices.Controllers
 
         //public async Task<IEnumerable<HelpDeskInfo>> GetRows()
         [HttpGet]
+       // [Authorize]
+        //[Authorize(Policy = "HelpDeskModule")]
+        [Authorize(Roles = "helpdesk")]
         public async Task<IActionResult> GetRows()
         {
-            var r = Request;
+            var r = Request; 
+            var rez =  JsonWebToken.Decode(Request.Headers["Authorization"], "VeryCompl!c@teSecretKey", false);
 
             int pagesize, pagenum, recordstartindex = 0;
 

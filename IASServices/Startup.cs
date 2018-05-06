@@ -10,6 +10,7 @@ using System.Web.Http.Cors;
 using IASServices.Models;
 using Microsoft.AspNetCore.ResponseCompression;
 using Microsoft.AspNetCore.Mvc;
+
 using Microsoft.AspNetCore.Rewrite;
 using System.Security.Cryptography.X509Certificates;
 using System.Diagnostics;
@@ -17,6 +18,11 @@ using System.IO;
 using Microsoft.AspNetCore.Server.Kestrel;
 using Microsoft.AspNetCore.Mvc.Cors.Internal;
 using Microsoft.AspNetCore.Http.Features;
+
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc.Authorization;
+using Microsoft.IdentityModel.Tokens;
+using System.Text;
 
 namespace IASServices
 {
@@ -62,6 +68,8 @@ namespace IASServices
                                                                      .AllowAnyMethod()
                                                                      .AllowAnyHeader()));
 
+            
+         
             services.AddMvc();
           
 
@@ -76,6 +84,32 @@ namespace IASServices
                
             });
 
+
+
+            //services.AddAuthorization(options =>
+            //{
+
+            //    options.AddPolicy(
+            //        "HelpDeskModule",
+            //        policy => policy.RequireRole("helpdesk"));
+
+            //    //options.AddPolicy("HelpDeskModule",
+            //    //    policy =>
+            //    //    {
+            //    //        policy.RequireClaim("helpdesk");
+            //    //    });
+            //});
+
+            // services.AddAuthentication();
+
+            //services.AddMvc(config =>
+            //{
+            //    var policy = new AuthorizationPolicyBuilder()
+            //                     .RequireAuthenticatedUser()
+            //                     .Build();
+            //    config.Filters.Add(new AuthorizeFilter(policy));
+            //});
+
             //wasl zwiekszenie limitow uploadu plikow
             services.Configure<FormOptions>(options =>
             {
@@ -83,6 +117,8 @@ namespace IASServices
                 options.ValueLengthLimit = int.MaxValue; //not recommended value
                 options.MultipartBodyLengthLimit = long.MaxValue; //not recommended value
             });
+
+        
 
             //services.Configure<MvcOptions>(options =>
             //{
@@ -102,7 +138,8 @@ namespace IASServices
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
         public void Configure(IApplicationBuilder app, IHostingEnvironment env, ILoggerFactory loggerFactory)
-        {            
+        {     
+
             loggerFactory.AddConsole(Configuration.GetSection("Logging"));
             loggerFactory.AddDebug();
 
@@ -112,6 +149,25 @@ namespace IASServices
             //                              .AllowAnyMethod()
             //                              .AllowAnyHeader());
             app.UseResponseCompression();
+
+           
+
+            app.UseJwtBearerAuthentication(new JwtBearerOptions
+            {
+                AutomaticAuthenticate = true,
+                //AutomaticChallenge = true,
+                //TokenValidationParameters = tokenValidationParameters
+                TokenValidationParameters = new TokenValidationParameters
+                {
+                    ValidateAudience = false,
+                    ValidateLifetime = false,
+                    ValidateIssuer = false,
+                    ValidateIssuerSigningKey = false,
+                    IssuerSigningKey = new SymmetricSecurityKey(Encoding.ASCII.GetBytes("VeryCompl!c@teSecretKey")),
+                    ValidateActor = false
+                },
+        });
+
             app.UseMvc();
          
 
