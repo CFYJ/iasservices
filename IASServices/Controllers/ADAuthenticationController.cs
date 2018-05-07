@@ -129,15 +129,19 @@ namespace IASServices.Controllers
             var userData = GetUserData(user);
             var role = GetUserRole(userData);
             var securityrole = GetSecurityUserRole(userData);
-            var scrole = securityrole.Split(',');
-            string[] tmp = new string[scrole.Length];
-            int i = 0;
-            foreach (string sc in scrole)
+            string[] scrole = null;         
+            if (securityrole != null)
             {
-                tmp[i] = sc.Trim();
-                i++;
+                scrole = securityrole.Split(',');
+                string[] tmp = new string[scrole.Length];
+                int i = 0;
+                foreach (string sc in scrole)
+                {
+                    tmp[i] = sc.Trim();
+                    i++;
+                }
+                scrole = tmp;
             }
-            scrole = tmp;
 
             //var payload = new Dictionary<string, object>
             //{
@@ -173,10 +177,13 @@ namespace IASServices.Controllers
                   new Claim("user",  user.Name),
                   new Claim("userData", JsonConvert.SerializeObject(userData))
                 };
-            
-            foreach (string rola in scrole)
+
+            if (securityrole != null)
+                foreach (string rola in scrole)
                 claims.Add(new Claim(ClaimTypes.Role, rola, "http://127.0.0.1:5000"));
-            
+            else
+                claims.Add(new Claim(ClaimTypes.Role, "", "http://127.0.0.1:5000"));
+
 
             var securityKey = new SymmetricSecurityKey(Encoding.ASCII.GetBytes(apikey));
             var jwt = new JwtSecurityToken(
