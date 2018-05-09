@@ -84,74 +84,74 @@ namespace IASServices.Controllers
 
     }
 
-    public class FilterClass
-    {
-        string value;
-        string field;
-        string condition;
+    //public class FsilterClass
+    //{
+    //    string value;
+    //    string field;
+    //    string condition;
 
-        public static string getFilters(IQueryCollection query)
-        {
+    //    public static string getFilters(IQueryCollection query)
+    //    {
 
-            int count = int.TryParse(query["filterscount"], out count) ? count : 0;
+    //        int count = int.TryParse(query["filterscount"], out count) ? count : 0;
 
-            string rez = "";
+    //        string rez = "";
 
-            if(count>0)
-            for (int i = 0; i < count; i++)
-            {
-                rez += i > 0 ? " and " : "";
-                FilterClass fi = new FilterClass(query["filterGroups[" + i + "][filters][0][field]"], query["filterGroups[" + i + "][filters][0][value]"]);
+    //        if(count>0)
+    //        for (int i = 0; i < count; i++)
+    //        {
+    //            rez += i > 0 ? " and " : "";
+    //            FilterClass fi = new FilterClass(query["filterGroups[" + i + "][filters][0][field]"], query["filterGroups[" + i + "][filters][0][value]"]);
 
-                rez += fi.getFilter();
-            }
+    //            rez += fi.getFilter();
+    //        }
 
-            rez = count > 0 ? " where " + rez + " " : "";
-
-
-            return rez;
-        }
-
-        public FilterClass(string field, string value, string condition = "CONTAINS")
-        {
-            this.value = value;
-            this.field = field;
-            this.condition = condition;
-        }
-
-        public string getFilter2(Type t)
-        {
-            Type myType = t;//t.GetType();
-            IList<PropertyInfo> props = new List<PropertyInfo>(myType.GetProperties());
-
-            foreach (PropertyInfo prop in props)
-            {
-                //object propValue = prop.GetValue(t, null);
-                if (prop.Name.ToLower() == this.field.ToLower())
-                {
-                   // prop.PropertyType
-                }
+    //        rez = count > 0 ? " where " + rez + " " : "";
 
 
-            }
+    //        return rez;
+    //    }
 
-            //string result = "";
+    //    public FilterClass(string field, string value, string condition = "CONTAINS")
+    //    {
+    //        this.value = value;
+    //        this.field = field;
+    //        this.condition = condition;
+    //    }
 
-            //switch (typeof())
-            //{
-            //    case string.
+    //    public string getFilter2(Type t)
+    //    {
+    //        Type myType = t;//t.GetType();
+    //        IList<PropertyInfo> props = new List<PropertyInfo>(myType.GetProperties());
 
-            //}
+    //        foreach (PropertyInfo prop in props)
+    //        {
+    //            //object propValue = prop.GetValue(t, null);
+    //            if (prop.Name.ToLower() == this.field.ToLower())
+    //            {
+    //               // prop.PropertyType
+    //            }
 
-            return "";
-        }
 
-        public string getFilter()
-        {
-            string rez = " "+field+" like '%"+value+"%' ";            
-            return rez;
-        } 
-    }
+    //        }
+
+    //        //string result = "";
+
+    //        //switch (typeof())
+    //        //{
+    //        //    case string.
+
+    //        //}
+
+    //        return "";
+    //    }
+
+    //    public string getFilter()
+    //    {
+    //        string rez = " "+field+" like '%"+value+"%' ";            
+    //        return rez;
+    //    } 
+    //}
 
 
 }
