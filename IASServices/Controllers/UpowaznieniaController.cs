@@ -16,7 +16,7 @@ using System.Text;
 
 using System.Configuration;
 using Newtonsoft.Json;
-
+using Microsoft.AspNetCore.Authorization;
 
 namespace IASServices.Controllers
 {
@@ -231,6 +231,7 @@ namespace IASServices.Controllers
 
         // POST: api/Kontakties
         [HttpPost]
+        [Authorize(Roles = "upowaznienia_admin")]
         public async Task<IActionResult> AddUpowaznienia([FromBody] Upowaznienia upowaznienia)
         {
             if (!ModelState.IsValid)
@@ -255,6 +256,7 @@ namespace IASServices.Controllers
 
         // PUT: api/Kontakties/5
         [HttpPut("{id}")]
+        [Authorize(Roles = "upowaznienia_admin,upowaznienia_opiekun")]
         public async Task<IActionResult> UpdateUpowaznienia([FromRoute] long id, [FromBody] Upowaznienia upowaznienia)
         {
             if (!ModelState.IsValid)
@@ -295,6 +297,7 @@ namespace IASServices.Controllers
         }
 
         [HttpPost("{id}")]
+        [Authorize(Roles = "upowaznienia_admin")]
         public async Task<IActionResult> DelUpowaznienia([FromRoute] long id)
         {
             if (!ModelState.IsValid)
@@ -330,7 +333,8 @@ namespace IASServices.Controllers
            => _context.Upowaznienia.Any(e => e.Id == id);
 
 
-        [HttpPost]        
+        [HttpPost]
+        [Authorize(Roles = "upowaznienia_admin,upowaznienia_opiekun")]
         public async Task<IActionResult> FileUpload(IList<IFormFile> filess)
         {//IFormFile file
          //IList<IFormFile> files
@@ -465,6 +469,7 @@ namespace IASServices.Controllers
         }
 
         [HttpGet("{id}")]
+        [Authorize(Roles = "upowaznienia_admin,upowaznienia_opiekun")]
         public async Task<IActionResult> DeleteFile([FromRoute] long id)
         {
 
