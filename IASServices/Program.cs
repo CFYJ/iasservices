@@ -31,14 +31,16 @@ namespace IASServices
                 }
 
 
-                //var cert = new X509Certificate2(Path.Combine(pathToContentRoot, "10.10.1.95.pfx"), "123456!");
+            //var cert = new X509Certificate2(Path.Combine(pathToContentRoot, "10.10.1.95.pfx"), "123456!");
 
+                string port = ConfigurationManager.AppSettings.Get("servicePort");
+                port = port == null ? "5000" : port;
 
                 var host = new WebHostBuilder()
                 .UseKestrel()
                 //.UseKestrel(cfg => cfg.UseHttps(cert))
                 //.UseUrls("http://localhost:5000","https://localhost:5001")
-                .UseUrls("http://localhost:5000")
+                .UseUrls("http://localhost:"+port)
                 .UseContentRoot(pathToContentRoot)
                 .UseIISIntegration()
                 .UseStartup<Startup>()
