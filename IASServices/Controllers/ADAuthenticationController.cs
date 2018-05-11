@@ -22,6 +22,7 @@ namespace IASServices.Controllers
 {
     [Produces("application/json")]
     [Route("api/[controller]/[action]")]
+    [Authorize]
     public class ADAuthenticationController : Controller
     {
         private KontaktyContext _context;
@@ -32,13 +33,10 @@ namespace IASServices.Controllers
         string home_user = "CFYL";
 
         public ADAuthenticationController(KontaktyContext context, IasSecurityContext securitcx)
-        {       
-
-                _context = context;
+        {
+            _context = context;
             securitycontext = securitcx;
-          
         }
-
         
 
         // POST: api/ADAuthentication
@@ -93,8 +91,6 @@ namespace IASServices.Controllers
             return Ok(new { Token = CreateToken(new ADUser() { Name = user.Name==null? home_user: user.Name }) });
         }
 
-
-
         [HttpPut]
         public string JwtAuthenticate([FromBody] ADUser user)
         {
@@ -118,7 +114,6 @@ namespace IASServices.Controllers
         /// </summary>
         /// <param name="user"></param>        
         /// <returns></returns>
-   
         public string CreateToken(ADUser user)
         {
             //var unixEpoch = new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc);        
@@ -206,6 +201,13 @@ namespace IASServices.Controllers
           
         }
 
+
+        #region modul security
+
+
+        #region obsluga modulu
+
+        [Authorize(Roles = "system_admin")]
         private string GetUserRole(Kontakty userData)
         {
             //if (!czy_w_domu)
@@ -219,6 +221,7 @@ namespace IASServices.Controllers
             return "User";
         }
 
+        [Authorize(Roles = "system_admin")]
         private string GetSecurityUserRole(Kontakty userData)
         {
             if (czy_w_domu)
@@ -230,16 +233,12 @@ namespace IASServices.Controllers
 
         }
 
-        //private string GetUserRole(ADUser user)
-        //{
-        //    var role = _context.Kontakty.Where(k => k.Login.Equals(user.Name)).Select(k => k.Stanowisko.Contains("kierownik"));
-        //    return "";
-        //}
-
+        [Authorize(Roles = "system_admin")]
         private Kontakty GetUserData(ADUser user)
             => _context.Kontakty.SingleOrDefault(k => k.Login.Equals(user.Name));
 
         [HttpGet("{id}")]
+        [Authorize(Roles = "system_admin")]
         public async Task<IEnumerable<UserHistory>> GetUsersHistory([FromRoute] long id)
         {
        
@@ -280,6 +279,7 @@ namespace IASServices.Controllers
 
 
         [HttpGet]
+        [Authorize(Roles = "system_admin")]
         public async Task<IEnumerable<Role>> GetRole()
         {
             //var queryString = HttpContext.Request.Query;
@@ -288,6 +288,7 @@ namespace IASServices.Controllers
 
 
         [HttpGet]
+        [Authorize(Roles = "system_admin")]
         public async Task<IEnumerable<UserRole>> GetUsersNotInRole()
         {
             string id = Request.Query["id"];
@@ -324,6 +325,7 @@ namespace IASServices.Controllers
 
 
         [HttpGet]
+        [Authorize(Roles = "system_admin")]
         public async Task<IEnumerable<UserRole>> GetUsersInRole()
         {
       
@@ -398,6 +400,7 @@ namespace IASServices.Controllers
 
 
         [HttpGet]
+        [Authorize(Roles = "system_admin")]
         public async Task<IEnumerable<UserRole>> GetAllUsers()
         {
     
@@ -433,6 +436,7 @@ namespace IASServices.Controllers
         }
 
         [HttpGet]
+        [Authorize(Roles = "system_admin")]
         public async Task<IEnumerable<Role>> GetRoleOffUser()
         {
             string id = Request.Query["id"];
@@ -468,6 +472,7 @@ namespace IASServices.Controllers
         }
 
         [HttpGet]
+        [Authorize(Roles = "system_admin")]
         public async Task<IEnumerable<Role>> GetUsersRoles()
         {
             string id = Request.Query["id"];
@@ -503,6 +508,7 @@ namespace IASServices.Controllers
         }
 
         [HttpPost]
+        [Authorize(Roles = "system_admin")]
         public async Task<IActionResult> AddRoleToUser([FromBody] Roleuzytkownika roleuzytkownika)
         {
             if (!ModelState.IsValid)
@@ -520,6 +526,7 @@ namespace IASServices.Controllers
         }
 
         [HttpPost]
+        [Authorize(Roles = "system_admin")]
         public async Task<IActionResult> RemoveRoleFromUser([FromBody] Roleuzytkownika roletoremove)
         {
             if (!ModelState.IsValid)
@@ -537,9 +544,12 @@ namespace IASServices.Controllers
 
         }
 
-        #region funkcje tworzenia rol na bazie
+        #endregion
+
+        #region obsluga rol na bazie
 
         [HttpGet("{id}")]
+        [Authorize(Roles = "system_admin")]
         public async Task<IActionResult> GetRola([FromRoute] long id)
         {
             if (!ModelState.IsValid)
@@ -558,6 +568,7 @@ namespace IASServices.Controllers
         }
 
         [HttpPost]
+        [Authorize(Roles = "system_admin")]
         public async Task<IActionResult> AddRole([FromBody] Role rola)
         {
             if (!ModelState.IsValid)
@@ -573,6 +584,7 @@ namespace IASServices.Controllers
         }
 
         [HttpPut("{id}")]
+        [Authorize(Roles = "system_admin")]
         public async Task<IActionResult> UpdateRole([FromRoute] long id, [FromBody] Role rola)
         {
             if (!ModelState.IsValid)
@@ -611,6 +623,7 @@ namespace IASServices.Controllers
         => securitycontext.Role.Any(e => e.Id == id);
 
         [HttpPost("{id}")]
+        [Authorize(Roles = "system_admin")]
         public async Task<IActionResult> DelRole([FromRoute] long id)
         {
             if (!ModelState.IsValid)
@@ -634,6 +647,7 @@ namespace IASServices.Controllers
 
         #endregion
 
+        #endregion
 
     }
 
