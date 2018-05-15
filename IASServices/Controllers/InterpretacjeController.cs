@@ -70,7 +70,7 @@ namespace IASServices.Controllers
 
             string query = "select id,nazwa,nipy,data,plik,rozszerzenie,tresc from(" +
                 "select * from(" +
-                "select id,nazwa,nipy,data,null as plik, null as tresc, '' as rozszerzenie ,ROW_NUMBER() OVER(ORDER BY id asc) AS Row from InterFiles" + conditions +
+                "select id,nazwa,nipy,data,null as plik, null as tresc, '' as rozszerzenie ,ROW_NUMBER() OVER(ORDER BY id desc) AS Row from InterFiles" + conditions +
                 ") as p1 where row between " + startrow + " and " + endrow +
                 ")as zz";
             var lista = await datacontext.InterFiles.FromSql(query).ToListAsync();
