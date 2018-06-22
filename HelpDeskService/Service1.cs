@@ -179,9 +179,12 @@ namespace HelpDeskService
                                         parseMessage(msgpart.Body);
                                 }
                             }
-
-
+                  
                         pop.DeleteMessage(msg);
+                        pop.Disconnect();
+                        pop = connect();
+                        if (pop == null)
+                            break;
                     }
                     catch (Exception ex) { writeLog(ex.Message); Thread.Sleep(5000); };
                 }

@@ -185,7 +185,8 @@ namespace IASServices.Controllers
                issuer: "http://127.0.0.1:5000",
                audience: "http://127.0.0.1:5000",       
                claims: claims,
-               expires: DateTime.UtcNow.AddMinutes(120),
+               expires: DateTime.UtcNow.AddMinutes(60),
+               //expires: DateTime.UtcNow.AddSeconds(15),
                signingCredentials: new SigningCredentials(securityKey, SecurityAlgorithms.HmacSha256));
 
             var encodedJwt = new JwtSecurityTokenHandler().WriteToken(jwt);
