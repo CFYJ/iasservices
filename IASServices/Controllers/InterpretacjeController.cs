@@ -66,22 +66,57 @@ namespace IASServices.Controllers
             int endrow = recordstartindex + pagesize;
 
 
-            string conditions = FilterClass.getFilters(r.Query);
 
-            string query = "select id,nazwa,nipy,data,plik,rozszerzenie,tresc from(" +
+            //slownik sklada sie z pola z grida i pola z fullteextsearch indeksem
+            string conditions = FilterClass.getFilters(r.Query, (new Dictionary<string, string>() { { "tresc", "plik" } }));
+
+            //if(conditions.Contains("tresc like '%"))
+            //{
+            //    System.Text.RegularExpressions.Regex rgx = new System.Text.RegularExpressions.Regex("tresc like '%.*%'");
+            //    conditions = rgx.Replace(conditions, )
+            //}
+
+            //int count = int.TryParse(r.Query["filterscount"], out count) ? count : 0;
+            //if (count > 0)
+            //    for (int i = 0; i < count; i++)
+            //    {
+            //        if (r.Query["filterGroups[" + i + "][filters][0][field]"] == "tresc")
+            //            r.Query["filterGroups[" + i + "][filters][0][condition]"] = "dfdf";
+            //    }
+
+
+                string query = "select id,nazwa,nipy,data,plik,rozszerzenie,tresc from(" +
                 "select * from(" +
                 "select id,nazwa,nipy,data,null as plik, null as tresc, '' as rozszerzenie ,ROW_NUMBER() OVER(ORDER BY id asc) AS Row from InterFiles" + conditions +
                 ") as p1 where row between " + startrow + " and " + endrow +
                 ")as zz";
-            var lista = await datacontext.InterFiles.FromSql(query).ToListAsync();
+
+            var totalrows = 0;
+          
+
+            using (var cmd = datacontext.Database.GetDbConnection().CreateCommand())
+            {
+                cmd.CommandText = "select count(1) from InterFiles" + conditions;
+                datacontext.Database.OpenConnection();
 
 
+               using (var counter = cmd.ExecuteReader())
+                {
 
+                    if (!counter.HasRows)
+                        return Ok(false);
+                    counter.Read();
+
+
+                    int.TryParse(counter.GetValue(0).ToString(), out totalrows);
+                   
+                }
+            }
 
             var res = new
             {
-                TotalRows = datacontext.InterFiles.FromSql("select  id,nazwa,nipy,data,null as plik, '' as tresc,'' as rozszerzenie from InterFiles" + conditions).Count(),
-                Rows = lista
+                TotalRows =totalrows,
+                Rows = await datacontext.InterFiles.FromSql(query).ToListAsync()
             };
 
             var wynik = Json(res);
