@@ -42,7 +42,7 @@ namespace IASServices.Controllers
             int.TryParse(r.Query["pagenum"], out pagenum);
             int.TryParse(r.Query["recordstartindex"], out recordstartindex);
 
-            int startrow = recordstartindex;
+            int startrow = recordstartindex+1;
             int endrow = recordstartindex + pagesize;
 
            
