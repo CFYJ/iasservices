@@ -5,8 +5,8 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace IASServices.Models
 {
-    [Table("sprawa", Schema = "rejestr_bwip")]
-    public partial class Sprawa
+    [Table("sprawy", Schema = "rejestr_bwip")]
+    public partial class Sprawy
     {
         [Column("id")]
         public long Id { get; set; }

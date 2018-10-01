@@ -7,7 +7,7 @@ namespace IASServices.Models
     public partial class RejestrBWIPContext : DbContext
     {
         public virtual DbSet<Pliki> Pliki { get; set; }
-        public virtual DbSet<Sprawa> Sprawa { get; set; }
+        public virtual DbSet<Sprawy> Sprawy { get; set; }
         public virtual DbSet<Zdarzenia> Zdarzenia { get; set; }
 
         public RejestrBWIPContext(DbContextOptions<RejestrBWIPContext> options) : base(options) { }

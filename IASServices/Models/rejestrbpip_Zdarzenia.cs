@@ -12,14 +12,14 @@ namespace IASServices.Models
         public long Id { get; set; }
         [Column("id_sprawy")]
         public long? IdSprawy { get; set; }
-        [Column("data_wejsca", TypeName = "datetime")]
-        public DateTime DataWejscia { get; set; }
+        [Column("data_wejscia", TypeName = "datetime")]
+        public DateTime? DataWejscia { get; set; }
         [Column("data_wyjscia", TypeName = "datetime")]
-        public DateTime DataWyjscia { get; set; }
+        public DateTime? DataWyjscia { get; set; }
         [Column("odpowiedz", TypeName = "varchar(max)")]
         public string Odpowiedz { get; set; }
         [Column("sysdate", TypeName = "datetime")]
-        public DateTime Sysdate { get; set; }
+        public DateTime? Sysdate { get; set; }
     
     }
 }
