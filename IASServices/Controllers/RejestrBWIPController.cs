@@ -144,6 +144,22 @@ namespace IASServices.Controllers
             return NoContent();
         }
 
+        [HttpPost]
+        [Authorize(Roles = "rejestr-bwip")]
+        public async Task<IActionResult> AddSprawy([FromBody] Sprawy sprawy)
+        {
+            var z = Request;
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
+               this.hdcontext.Sprawy.Add(sprawy);
+            await hdcontext.SaveChangesAsync();
+
+            return CreatedAtAction("GetSprawy", new { id = sprawy.Id }, sprawy);
+        }
+
         private bool SprawyExists(long id)
        => hdcontext.Sprawy.Any(e => e.Id == id);
 
