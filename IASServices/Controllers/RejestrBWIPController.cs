@@ -10,6 +10,10 @@ using IASServices.Models;
 using System.Reflection;
 using Microsoft.AspNetCore.Authorization;
 using JWT;
+using System.Configuration;
+using System.IO;
+
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace IASServices.Controllers
 {
@@ -39,6 +43,18 @@ namespace IASServices.Controllers
             int.TryParse(r.Query["pagenum"], out pagenum);
             int.TryParse(r.Query["recordstartindex"], out recordstartindex);
 
+
+            string sortorder = " ORDER BY id desc";
+     
+            if (r.Query["sortorder"] != "")
+                foreach (var prop in hdcontext.Model.FindEntityType(typeof(Sprawy)).GetProperties())
+                {
+                    if (prop.Name.ToString().ToUpper() == r.Query["sortdatafield"].ToString().ToUpper())
+                        sortorder = " ORDER BY " + prop.Relational().ColumnName + " " + r.Query["sortorder"];
+                }
+
+
+
             int startrow = recordstartindex;
             int endrow = recordstartindex + pagesize;
 
@@ -47,10 +63,10 @@ namespace IASServices.Controllers
 
             string query = "select * from(" +
                 "select * from(" +
-                "select * ,ROW_NUMBER() OVER(ORDER BY id asc) AS Row from rejestr_bwip.sprawy" + conditions +
+                "select * ,ROW_NUMBER() OVER(" + sortorder + ") AS Row from rejestr_bwip.sprawy" + conditions +
                 ") as p1 where row between " + startrow + " and " + endrow +
-                ")as zz";
-            var lista = await hdcontext.Sprawy.FromSql(query).ToListAsync();        
+                ")as zz " + sortorder;
+            var lista = await hdcontext.Sprawy.FromSql(query).ToListAsync();
 
 
             var res = new
@@ -163,6 +179,76 @@ namespace IASServices.Controllers
         private bool SprawyExists(long id)
        => hdcontext.Sprawy.Any(e => e.Id == id);
 
+
+
+        [HttpPost("{id}")]
+        [Authorize(Roles = "rejestr-bwip")]
+        public async Task<IActionResult> DeleteSprawy([FromRoute] long id)
+        {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
+            // _context.Database.SqlQuery("df");
+            var sprawy = await hdcontext.Sprawy.SingleOrDefaultAsync(m => m.Id == id);
+            if (sprawy == null)
+            {
+                return NotFound();
+            }
+
+            hdcontext.Sprawy.Remove(sprawy);
+            await hdcontext.SaveChangesAsync();
+
+            return Ok(sprawy);
+        }
+
+
+
+        //[HttpPost]
+        //[Authorize(Roles = "rejestr-bwip")]
+        //public async Task<IActionResult> FileUpload(IList<IFormFile> filess)
+        //{//IFormFile file
+        // //IList<IFormFile> files
+        // //[FromBody]  IFormFile fil
+        //    var files = Request.Form.Files;
+
+        //    string filePath = ConfigurationManager.AppSettings.Get("filesCatalogPath");
+
+        //    foreach (IFormFile file in files)
+        //    {
+
+
+        //        if (file == null || file.Length == 0)
+        //            return Content("file not selected");
+
+        //        string vFileId = DateTime.Now.Ticks.ToString();
+
+        //        var path = Path.Combine(
+        //                    filePath,
+        //                    vFileId);
+
+        //        try
+        //        {
+        //            using (var stream = new FileStream(path, FileMode.Create))
+        //            {
+        //                await file.CopyToAsync(stream);
+        //            }
+        //            UpowaznieniaPliki plik = new UpowaznieniaPliki() { IdPliku = vFileId, Nazwa = file.FileName };
+        //            _context.UpowaznieniaPliki.Add(plik);
+        //            int newid = await _context.SaveChangesAsync();
+
+        //            return CreatedAtAction("GetPliki", new { id = plik.Id }, plik);
+
+        //        }
+        //        catch (Exception ex) { return BadRequest(); }
+
+        //    }
+
+        //    // return RedirectToAction("Files");
+
+        //    return Ok("true");
+        //}
 
     }
 
