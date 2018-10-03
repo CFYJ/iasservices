@@ -21,6 +21,6 @@ namespace IASServices.Models
         [Column("sysdate", TypeName = "datetime")]
         public DateTime Sysdate { get; set; }
         [Column("status")]
-        public bool Status { get; set; }
+        public bool? Status { get; set; }
     }
 }

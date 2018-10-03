@@ -106,7 +106,7 @@ namespace IASServices.Controllers
                 "select * from(" +
                 "select * ,ROW_NUMBER() OVER(ORDER BY id asc) AS Row from rejestr_bwip.zdarzenia" + conditions +
                 ") as p1 where row between " + startrow + " and " + endrow +
-                ")as zz";
+                ")as zz order by id desc";
             var lista = await hdcontext.Zdarzenia.FromSql(query).ToListAsync();
 
 
@@ -123,6 +123,45 @@ namespace IASServices.Controllers
 
         }
 
+        [HttpGet]
+        [Authorize(Roles = "rejestr-bwip")]
+        public async Task<IActionResult> GetPliki()
+        {
+            var r = Request;
+            var rez = JsonWebToken.Decode(Request.Headers["Authorization"], "VeryCompl!c@teSecretKey", false);
+
+            int pagesize, pagenum, recordstartindex = 0;
+
+            int.TryParse(r.Query["pagesize"], out pagesize);
+            int.TryParse(r.Query["pagenum"], out pagenum);
+            int.TryParse(r.Query["recordstartindex"], out recordstartindex);
+
+            int startrow = recordstartindex;
+            int endrow = recordstartindex + pagesize;
+
+
+            string conditions = FilterClass.getFilters(r.Query);
+
+
+            int id = 0;
+            int.TryParse(Request.Query["id"], out id);
+
+          
+            var lista = await hdcontext.Pliki.Where(a=>a.IdZdarzenia==id).ToListAsync();
+
+
+            var res = new
+            {
+                TotalRows = hdcontext.Pliki.Where(a => a.IdZdarzenia==id).Count(),
+                Rows = lista
+            };
+
+            var wynik = Json(res);
+
+            return wynik;
+
+
+        }
 
         [HttpPut("{id}")]
         [Authorize(Roles = "rejestr-bwip")]
