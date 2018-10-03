@@ -55,7 +55,7 @@ namespace IASServices.Controllers
 
 
 
-            int startrow = recordstartindex;
+            int startrow = recordstartindex+1;
             int endrow = recordstartindex + pagesize;
 
 
