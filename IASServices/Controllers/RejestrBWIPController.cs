@@ -99,8 +99,11 @@ namespace IASServices.Controllers
             int startrow = recordstartindex;
             int endrow = recordstartindex + pagesize;
 
+            int id = 0;
+            int.TryParse(Request.Query["id"], out id);
 
-            string conditions = FilterClass.getFilters(r.Query);
+
+            string conditions = FilterClass.getFilters(r.Query)+" and id_sprawy="+id.ToString();
 
             string query = "select * from(" +
                 "select * from(" +

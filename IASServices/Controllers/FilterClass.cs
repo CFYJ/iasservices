@@ -21,16 +21,25 @@ namespace IASServices.Controllers
 
             string rez = "";
 
+            //if (count > 0)
+            //    for (int i = 0; i < count; i++)
+            //    {
+            //        rez += i > 0 ? " and " : "";
+            //        FilterClass fi = new FilterClass(query["filterGroups[" + i + "][filters][0][field]"], query["filterGroups[" + i + "][filters][0][value]"], "CONTAINS", lista);
+            //        rez += fi.getFilter();
+            //    }
+            //rez = count > 0 ? " where " + rez + " " : "";
+
             if (count > 0)
                 for (int i = 0; i < count; i++)
                 {
-                    rez += i > 0 ? " and " : "";
+                    rez +=  " and ";
                     FilterClass fi = new FilterClass(query["filterGroups[" + i + "][filters][0][field]"], query["filterGroups[" + i + "][filters][0][value]"], "CONTAINS", lista);
 
                     rez += fi.getFilter();
                 }
 
-            rez = count > 0 ? " where " + rez + " " : "";
+            rez =  " where 1=1 " + rez + " ";
 
 
             return rez;
