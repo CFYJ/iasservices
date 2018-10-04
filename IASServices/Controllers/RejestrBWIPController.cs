@@ -38,21 +38,26 @@ namespace IASServices.Controllers
             var r = Request;
             var rez = JsonWebToken.Decode(Request.Headers["Authorization"], "VeryCompl!c@teSecretKey", false);
 
-            int pagesize, pagenum, recordstartindex = 0;
+            int pagesize, pagenum, recordstartindex, filterscount = 0;
 
             int.TryParse(r.Query["pagesize"], out pagesize);
             int.TryParse(r.Query["pagenum"], out pagenum);
             int.TryParse(r.Query["recordstartindex"], out recordstartindex);
+            int.TryParse(r.Query["filterscount"], out filterscount);
 
 
-            string sortorder = " ORDER BY id desc";
+            string sortorder = (r.Query["sortorder"] != "")?FilterClass.getSortCondition(r.Query,(typeof(Sprawy))) : " ORDER BY id desc";
 
-            if (r.Query["sortorder"] != "")
-                foreach (var prop in hdcontext.Model.FindEntityType(typeof(Sprawy)).GetProperties())
-                {
-                    if (prop.Name.ToString().ToUpper() == r.Query["sortdatafield"].ToString().ToUpper())
-                        sortorder = " ORDER BY " + prop.Relational().ColumnName + " " + r.Query["sortorder"];
-                }
+     
+            #region stare metody wyci¹gajace nazwê kolumny z bazy
+            //if (r.Query["sortorder"] != "")
+            //    foreach (var prop in hdcontext.Model.FindEntityType(typeof(Sprawy)).GetProperties())
+            //    {
+            //        if (prop.Name.ToString().ToUpper() == r.Query["sortdatafield"].ToString().ToUpper())
+            //            sortorder = " ORDER BY " + prop.Relational().ColumnName + " " + r.Query["sortorder"];
+            //    }
+
+
 
             //if (r.Query["sortorder"] != "")
             //    foreach (var prop in (typeof(Sprawy)).GetProperties())
@@ -65,14 +70,17 @@ namespace IASServices.Controllers
             //        string s = (x as ColumnAttribute).Name;
             //    }
 
-
+            #endregion
 
 
             int startrow = recordstartindex+1;
             int endrow = recordstartindex + pagesize;
 
 
-            string conditions = FilterClass.getFilters(r.Query, null, (typeof(Sprawy)).GetProperties());
+            string conditions = FilterClass.getFilters(r.Query);
+
+            if (filterscount > 0)
+                FilterClass.generateQueryCondition(r.Query, null, typeof(Sprawy));
 
             string query = "select * from(" +
                 "select * from(" +
@@ -197,7 +205,7 @@ namespace IASServices.Controllers
             int.TryParse(Request.Query["id"], out id);
 
 
-            string conditions = FilterClass.getFilters(r.Query,null, (typeof(Zdarzenia)).GetProperties()) +" and id_sprawy="+id.ToString();
+            string conditions = FilterClass.getFilters(r.Query) +" and id_sprawy="+id.ToString();
 
 
 
