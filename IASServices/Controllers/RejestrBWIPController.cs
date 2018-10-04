@@ -29,6 +29,7 @@ namespace IASServices.Controllers
             this.hdcontext = context;
         }
 
+        #region sprawy
 
         [HttpGet]
         [Authorize(Roles = "rejestr-bwip")]
@@ -45,7 +46,7 @@ namespace IASServices.Controllers
 
 
             string sortorder = " ORDER BY id desc";
-     
+
             if (r.Query["sortorder"] != "")
                 foreach (var prop in hdcontext.Model.FindEntityType(typeof(Sprawy)).GetProperties())
                 {
@@ -53,13 +54,25 @@ namespace IASServices.Controllers
                         sortorder = " ORDER BY " + prop.Relational().ColumnName + " " + r.Query["sortorder"];
                 }
 
+            //if (r.Query["sortorder"] != "")
+            //    foreach (var prop in (typeof(Sprawy)).GetProperties())
+            //    {
+            //        //if (prop.Name.ToString().ToUpper() == r.Query["sortdatafield"].ToString().ToUpper())
+            //        //    sortorder = " ORDER BY " + prop. .Relational().ColumnName + " " + r.Query["sortorder"];
+
+            //        var z = prop.Name;
+            //        var x = prop.GetCustomAttributes().First();
+            //        string s = (x as ColumnAttribute).Name;
+            //    }
+
+
 
 
             int startrow = recordstartindex+1;
             int endrow = recordstartindex + pagesize;
 
 
-            string conditions = FilterClass.getFilters(r.Query);
+            string conditions = FilterClass.getFilters(r.Query, null, (typeof(Sprawy)).GetProperties());
 
             string query = "select * from(" +
                 "select * from(" +
@@ -82,90 +95,6 @@ namespace IASServices.Controllers
 
         }
 
-
-        [HttpGet]
-        [Authorize(Roles = "rejestr-bwip")]
-        public async Task<IActionResult> GetZdarzenia()
-        {
-            var r = Request;
-            var rez = JsonWebToken.Decode(Request.Headers["Authorization"], "VeryCompl!c@teSecretKey", false);
-
-            int pagesize, pagenum, recordstartindex = 0;
-
-            int.TryParse(r.Query["pagesize"], out pagesize);
-            int.TryParse(r.Query["pagenum"], out pagenum);
-            int.TryParse(r.Query["recordstartindex"], out recordstartindex);
-
-            int startrow = recordstartindex;
-            int endrow = recordstartindex + pagesize;
-
-            int id = 0;
-            int.TryParse(Request.Query["id"], out id);
-
-
-            string conditions = FilterClass.getFilters(r.Query)+" and id_sprawy="+id.ToString();
-
-            string query = "select * from(" +
-                "select * from(" +
-                "select * ,ROW_NUMBER() OVER(ORDER BY id asc) AS Row from rejestr_bwip.zdarzenia" + conditions +
-                ") as p1 where row between " + startrow + " and " + endrow +
-                ")as zz order by id desc";
-            var lista = await hdcontext.Zdarzenia.FromSql(query).ToListAsync();
-
-
-            var res = new
-            {
-                TotalRows = hdcontext.Zdarzenia.FromSql("select * from rejestr_bwip.zdarzenia" + conditions).Count(),
-                Rows = lista
-            };
-
-            var wynik = Json(res);
-
-            return wynik;
-
-
-        }
-
-        [HttpGet]
-        [Authorize(Roles = "rejestr-bwip")]
-        public async Task<IActionResult> GetPliki()
-        {
-            var r = Request;
-            var rez = JsonWebToken.Decode(Request.Headers["Authorization"], "VeryCompl!c@teSecretKey", false);
-
-            int pagesize, pagenum, recordstartindex = 0;
-
-            int.TryParse(r.Query["pagesize"], out pagesize);
-            int.TryParse(r.Query["pagenum"], out pagenum);
-            int.TryParse(r.Query["recordstartindex"], out recordstartindex);
-
-            int startrow = recordstartindex;
-            int endrow = recordstartindex + pagesize;
-
-
-            string conditions = FilterClass.getFilters(r.Query);
-
-
-            int id = 0;
-            int.TryParse(Request.Query["id"], out id);
-
-          
-            var lista = await hdcontext.Pliki.Where(a=>a.IdZdarzenia==id).ToListAsync();
-
-
-            var res = new
-            {
-                TotalRows = hdcontext.Pliki.Where(a => a.IdZdarzenia==id).Count(),
-                Rows = lista
-            };
-
-            var wynik = Json(res);
-
-            return wynik;
-
-
-        }
-
         [HttpPut("{id}")]
         [Authorize(Roles = "rejestr-bwip")]
         public async Task<IActionResult> UpdateSprawy([FromRoute] long id, [FromBody] Sprawy sprawy)
@@ -175,11 +104,11 @@ namespace IASServices.Controllers
                 return BadRequest(ModelState);
             }
 
-            if (id !=sprawy.Id)
+            if (id != sprawy.Id)
             {
                 return BadRequest();
             }
-   
+
 
             hdcontext.Entry(sprawy).State = EntityState.Modified;
 
@@ -212,15 +141,11 @@ namespace IASServices.Controllers
                 return BadRequest(ModelState);
             }
 
-               this.hdcontext.Sprawy.Add(sprawy);
+            this.hdcontext.Sprawy.Add(sprawy);
             await hdcontext.SaveChangesAsync();
 
             return CreatedAtAction("GetSprawy", new { id = sprawy.Id }, sprawy);
         }
-
-        private bool SprawyExists(long id)
-       => hdcontext.Sprawy.Any(e => e.Id == id);
-
 
 
         [HttpPost("{id}")]
@@ -244,6 +169,190 @@ namespace IASServices.Controllers
 
             return Ok(sprawy);
         }
+
+        private bool SprawyExists(long id)
+       => hdcontext.Sprawy.Any(e => e.Id == id);
+
+        #endregion
+
+        #region zdarzenia
+
+        [HttpGet]
+        [Authorize(Roles = "rejestr-bwip")]
+        public async Task<IActionResult> GetZdarzenia()
+        {
+            var r = Request;
+            var rez = JsonWebToken.Decode(Request.Headers["Authorization"], "VeryCompl!c@teSecretKey", false);
+
+            int pagesize, pagenum, recordstartindex = 0;
+
+            int.TryParse(r.Query["pagesize"], out pagesize);
+            int.TryParse(r.Query["pagenum"], out pagenum);
+            int.TryParse(r.Query["recordstartindex"], out recordstartindex);
+
+            int startrow = recordstartindex+1;
+            int endrow = recordstartindex + pagesize;
+
+            int id = 0;
+            int.TryParse(Request.Query["id"], out id);
+
+
+            string conditions = FilterClass.getFilters(r.Query,null, (typeof(Zdarzenia)).GetProperties()) +" and id_sprawy="+id.ToString();
+
+
+
+            string query = "select * from(" +
+                "select * from(" +
+                "select * ,ROW_NUMBER() OVER(ORDER BY id asc) AS Row from rejestr_bwip.zdarzenia" + conditions +
+                ") as p1 where row between " + startrow + " and " + endrow +
+                ")as zz order by id desc";
+            var lista = await hdcontext.Zdarzenia.FromSql(query).ToListAsync();
+
+
+            var res = new
+            {
+                TotalRows = hdcontext.Zdarzenia.FromSql("select * from rejestr_bwip.zdarzenia" + conditions).Count(),
+                Rows = lista
+            };
+
+            var wynik = Json(res);
+
+            return wynik;
+
+
+        }
+
+        [HttpPost]
+        [Authorize(Roles = "rejestr-bwip")]
+        public async Task<IActionResult> AddZdarzenia([FromBody] Zdarzenia zdarzenia)
+        {
+            var z = Request;
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
+            this.hdcontext.Zdarzenia.Add(zdarzenia);
+            await hdcontext.SaveChangesAsync();
+
+            return CreatedAtAction("GetZdarzenia", new { id = zdarzenia.Id }, zdarzenia);
+        }
+
+        [HttpPut("{id}")]
+        [Authorize(Roles = "rejestr-bwip")]
+        public async Task<IActionResult> UpdateZdarzenia([FromRoute] long id, [FromBody] Zdarzenia zdarzenia)
+        {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
+            if (id != zdarzenia.Id)
+            {
+                return BadRequest();
+            }
+     
+
+
+
+            hdcontext.Entry(zdarzenia).State = EntityState.Modified;
+
+            try
+            {
+                await hdcontext.SaveChangesAsync();
+            }
+            catch (DbUpdateConcurrencyException)
+            {
+                if (!ZdarzeniaExists(id))
+                {
+                    return NotFound();
+                }
+                else
+                {
+                    throw;
+                }
+            }
+
+            return NoContent();
+        }
+
+        [HttpPost("{id}")]
+        [Authorize(Roles = "rejestr-bwip")]
+        public async Task<IActionResult> DeleteZdarzenia([FromRoute] long id)
+        {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
+            // _context.Database.SqlQuery("df");
+            var zdarzenia = await hdcontext.Zdarzenia.SingleOrDefaultAsync(m => m.Id == id);
+            if (zdarzenia == null)            
+                return NotFound();
+            
+
+            hdcontext.Zdarzenia.Remove(zdarzenia);
+            await hdcontext.SaveChangesAsync();
+
+            return Ok(zdarzenia);
+        }
+
+
+        private bool ZdarzeniaExists(long id)=> hdcontext.Zdarzenia.Any(e => e.Id == id);
+
+        #endregion
+
+
+        #region pliki
+
+        [HttpGet]
+        [Authorize(Roles = "rejestr-bwip")]
+        public async Task<IActionResult> GetPliki()
+        {
+            var r = Request;
+            var rez = JsonWebToken.Decode(Request.Headers["Authorization"], "VeryCompl!c@teSecretKey", false);
+
+            int pagesize, pagenum, recordstartindex = 0;
+
+            int.TryParse(r.Query["pagesize"], out pagesize);
+            int.TryParse(r.Query["pagenum"], out pagenum);
+            int.TryParse(r.Query["recordstartindex"], out recordstartindex);
+
+            int startrow = recordstartindex+1;
+            int endrow = recordstartindex + pagesize;
+
+
+            string conditions = FilterClass.getFilters(r.Query);
+
+
+            int id = 0;
+            int.TryParse(Request.Query["id"], out id);
+
+          
+            var lista = await hdcontext.Pliki.Where(a=>a.IdZdarzenia==id).ToListAsync();
+
+
+            var res = new
+            {
+                TotalRows = hdcontext.Pliki.Where(a => a.IdZdarzenia==id).Count(),
+                Rows = lista
+            };
+
+            var wynik = Json(res);
+
+            return wynik;
+
+
+        }
+
+
+        #endregion
+
+
+
+
+
+
 
 
 
