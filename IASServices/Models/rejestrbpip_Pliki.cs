@@ -5,6 +5,7 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace IASServices.Models
 {
+   
     [Table("pliki", Schema = "rejestr_bwip")]
     public partial class Pliki
     {
@@ -15,11 +16,12 @@ namespace IASServices.Models
         [Column("nazwa", TypeName = "varchar(150)")]
         public string Nazwa { get; set; }
         [Column("typ", TypeName = "varchar(4)")]
-        public string Typ { get; set; }
+        public string Typ { get; set; }       
+       //[DatabaseGenerated(DatabaseGeneratedOption.Computed)]
         [Column("dane", TypeName = "image")]
         public byte[] Dane { get; set; }
         [Column("sysdate", TypeName = "datetime")]
-        public DateTime Sysdate { get; set; }
+        public DateTime? Sysdate { get; set; }
         [Column("status")]
         public bool? Status { get; set; }
     }

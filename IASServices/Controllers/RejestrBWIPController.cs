@@ -46,7 +46,7 @@ namespace IASServices.Controllers
             int.TryParse(r.Query["filterscount"], out filterscount);
 
 
-            string sortorder = (r.Query["sortorder"] != "")?FilterClass.getSortCondition(r.Query,(typeof(Sprawy))) : " ORDER BY id desc";
+            string sortorder = (r.Query.Where(a => a.Key == "sortorder").Count() > 0) ?FilterClass.getSortCondition(r.Query,(typeof(Sprawy))) : " ORDER BY id desc";
 
      
             #region stare metody wyci¹gajace nazwê kolumny z bazy
@@ -77,10 +77,7 @@ namespace IASServices.Controllers
             int endrow = recordstartindex + pagesize;
 
 
-            string conditions = FilterClass.getFilters(r.Query);
-
-            if (filterscount > 0)
-                FilterClass.generateQueryCondition(r.Query, null, typeof(Sprawy));
+            string conditions = FilterClass.generateQueryCondition(r.Query, null, typeof(Sprawy));
 
             string query = "select * from(" +
                 "select * from(" +
@@ -190,7 +187,7 @@ namespace IASServices.Controllers
         public async Task<IActionResult> GetZdarzenia()
         {
             var r = Request;
-            var rez = JsonWebToken.Decode(Request.Headers["Authorization"], "VeryCompl!c@teSecretKey", false);
+            //var rez = JsonWebToken.Decode(Request.Headers["Authorization"], "VeryCompl!c@teSecretKey", false);
 
             int pagesize, pagenum, recordstartindex = 0;
 
@@ -204,16 +201,17 @@ namespace IASServices.Controllers
             int id = 0;
             int.TryParse(Request.Query["id"], out id);
 
+            string sortorder = (r.Query.Where(a => a.Key == "sortorder").Count() > 0) ? FilterClass.getSortCondition(r.Query, (typeof(Zdarzenia))) : " ORDER BY id desc";
 
-            string conditions = FilterClass.getFilters(r.Query) +" and id_sprawy="+id.ToString();
+            string conditions = FilterClass.generateQueryCondition(r.Query, null, typeof(Zdarzenia)) +" and id_sprawy="+id.ToString();
 
 
 
             string query = "select * from(" +
                 "select * from(" +
-                "select * ,ROW_NUMBER() OVER(ORDER BY id asc) AS Row from rejestr_bwip.zdarzenia" + conditions +
+                "select * ,ROW_NUMBER() OVER("+sortorder+") AS Row from rejestr_bwip.zdarzenia" + conditions +
                 ") as p1 where row between " + startrow + " and " + endrow +
-                ")as zz order by id desc";
+                ")as zz " + sortorder;
             var lista = await hdcontext.Zdarzenia.FromSql(query).ToListAsync();
 
 
@@ -353,6 +351,107 @@ namespace IASServices.Controllers
 
         }
 
+
+        [HttpPost]
+        [Authorize(Roles = "rejestr-bwip")]
+        public async Task<IActionResult> AddPliki(IList<IFormFile> filess)
+        {
+
+            var files = Request.Form.Files;       
+
+            foreach (IFormFile file in files)
+            {
+
+
+                if (file == null || file.Length == 0)
+                    return Content("file not selected");
+
+                string typ = "";
+                string[] lista;
+                if ((lista = file.FileName.Split('.')).Count() > 1)
+                    typ = lista[lista.Length - 1];
+
+                try
+                {
+                    Pliki newfile = new Pliki() { Nazwa = file.FileName, Typ = typ };
+
+                    using (MemoryStream ms = new MemoryStream())
+                    {
+                        await file.CopyToAsync(ms);
+                        newfile.Dane = ms.ToArray();
+
+
+                        hdcontext.Pliki.Add(newfile);
+                        int newid = await hdcontext.SaveChangesAsync();
+                    }
+
+                    return CreatedAtAction("GetPliki", new { id = newfile.Id }, newfile);
+
+                }
+                catch (Exception ex) { return BadRequest(); }
+
+            }
+
+
+            return Ok("true");
+        }
+
+        [HttpPut("{id}")]
+        [Authorize(Roles = "rejestr-bwip")]
+        public async Task<IActionResult> UpdatePliki([FromRoute] long id, [FromBody] Pliki pliki)
+        {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
+            if (id != pliki.Id)
+            {
+                return BadRequest();
+            }
+            hdcontext.Entry(pliki).State = EntityState.Modified;
+
+            try
+            {
+                await hdcontext.SaveChangesAsync();
+            }
+            catch (DbUpdateConcurrencyException)
+            {
+                if (!PlikiExists(id))
+                {
+                    return NotFound();
+                }
+                else
+                {
+                    throw;
+                }
+            }
+
+            return NoContent();
+        }
+
+        private bool PlikiExists(long id) => hdcontext.Pliki.Any(e => e.Id == id);
+
+        [HttpPost("{id}")]
+        [Authorize(Roles = "rejestr-bwip")]
+        public async Task<IActionResult> DeletePliki([FromRoute] long id)
+        {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
+            // _context.Database.SqlQuery("df");
+            var pliki = await hdcontext.Pliki.SingleOrDefaultAsync(m => m.Id == id);
+            if (pliki == null)
+                return NotFound();
+
+
+            hdcontext.Pliki.Remove(pliki);
+            await hdcontext.SaveChangesAsync();
+
+            return Ok(pliki);
+        }
 
         #endregion
 
