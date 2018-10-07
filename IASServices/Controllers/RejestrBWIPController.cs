@@ -100,6 +100,21 @@ namespace IASServices.Controllers
 
         }
 
+        [HttpGet("{nrBwip}")]
+        [Authorize(Roles = "rejestr-bwip")]
+        public async Task<IActionResult> GetSprawyByID([FromRoute] string nrBwip)
+        {
+
+            var lista = await hdcontext.Sprawy.Where(a=>a.NrBwip==nrBwip).ToListAsync();       
+
+            var wynik = Json(lista);
+
+            return wynik;
+
+
+        }
+
+
         [HttpPut("{id}")]
         [Authorize(Roles = "rejestr-bwip")]
         public async Task<IActionResult> UpdateSprawy([FromRoute] long id, [FromBody] Sprawy sprawy)
@@ -396,6 +411,51 @@ namespace IASServices.Controllers
             return Ok("true");
         }
 
+
+        [HttpPost("{id}")]
+        [Authorize(Roles = "rejestr-bwip")]
+        public async Task<IActionResult> UploadPliki([FromRoute] long id, IList<IFormFile> filess)
+        {
+            var files = Request.Form.Files;
+
+            foreach (IFormFile file in files)
+            {
+
+
+                if (file == null || file.Length == 0)
+                    return Content("file not selected");
+
+                string typ = "";
+                string[] lista;
+                if ((lista = file.FileName.Split('.')).Count() > 1)
+                    typ = lista[lista.Length - 1];
+
+                try
+                {
+                    Pliki newfile = new Pliki() { Nazwa = file.FileName, Typ = typ };
+
+                    using (MemoryStream ms = new MemoryStream())
+                    {
+                        await file.CopyToAsync(ms);
+                        newfile.Dane = ms.ToArray();
+
+                        newfile.IdZdarzenia = id;
+                        hdcontext.Pliki.Add(newfile);
+                        int newid = await hdcontext.SaveChangesAsync();
+                    }
+
+                    return CreatedAtAction("GetPliki", new { id = newfile.Id }, newfile);
+
+                }
+                catch (Exception ex) { return BadRequest(); }
+
+            }
+
+
+            return Ok("true");
+
+        }
+
         [HttpPut("{id}")]
         [Authorize(Roles = "rejestr-bwip")]
         public async Task<IActionResult> UpdatePliki([FromRoute] long id, [FromBody] Pliki pliki)
@@ -452,6 +512,53 @@ namespace IASServices.Controllers
 
             return Ok(pliki);
         }
+
+        [HttpGet("{id}")]
+        public void DownloadPliki([FromRoute] string id)
+        {
+            try
+            {
+                Pliki file = hdcontext.Pliki.Where(f => f.Id == long.Parse(id)).First();
+
+                Response.Headers.Add("Content-Disposition", "attachment;filename=" + file.Nazwa);
+
+                Response.Body.Write(file.Dane, 0, file.Dane.Length);
+
+            }
+            catch (Exception ex) { Response.StatusCode = 500; }
+        }
+
+
+        //[HttpGet("{id}")]
+        //public FileResult DownloadPliki([FromRoute] string id)
+        //{
+
+        //    Pliki file = hdcontext.Pliki.Where(f => f.Id == long.Parse(id)).First();
+
+        //    try
+        //    {
+        //        byte[] fileBytes = file.Dane; 
+
+        //        return File(fileBytes, System.Net.Mime.MediaTypeNames.Application.Octet, file.Nazwa);
+        //    }
+        //    catch (Exception ex) { return null; };
+        //}
+
+
+
+        //[HttpGet("{id}")]
+        //[Authorize(Roles = "rejestr-bwip")]
+        //public IActionResult DownloadPliki([FromRoute] string id)
+        //{
+        //    try
+        //    {
+        //        Pliki file = hdcontext.Pliki.Where(f => f.Id == long.Parse(id)).First();
+
+        //        return new FileStreamResult(new MemoryStream(file.Dane), "application/" + file.Typ);
+        //    }
+        //    catch (Exception ex)  { return null; }
+        //}
+
 
         #endregion
 
