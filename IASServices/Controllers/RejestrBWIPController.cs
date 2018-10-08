@@ -331,35 +331,36 @@ namespace IASServices.Controllers
         public async Task<IActionResult> GetPliki()
         {
             var r = Request;
-            var rez = JsonWebToken.Decode(Request.Headers["Authorization"], "VeryCompl!c@teSecretKey", false);
+            //var rez = JsonWebToken.Decode(Request.Headers["Authorization"], "VeryCompl!c@teSecretKey", false);
 
-            int pagesize, pagenum, recordstartindex = 0;
+            //int pagesize, pagenum, recordstartindex = 0;
 
-            int.TryParse(r.Query["pagesize"], out pagesize);
-            int.TryParse(r.Query["pagenum"], out pagenum);
-            int.TryParse(r.Query["recordstartindex"], out recordstartindex);
+            //int.TryParse(r.Query["pagesize"], out pagesize);
+            //int.TryParse(r.Query["pagenum"], out pagenum);
+            //int.TryParse(r.Query["recordstartindex"], out recordstartindex);
 
-            int startrow = recordstartindex+1;
-            int endrow = recordstartindex + pagesize;
+            //int startrow = recordstartindex+1;
+            //int endrow = recordstartindex + pagesize;
 
 
-            string conditions = FilterClass.getFilters(r.Query);
+            //string conditions = FilterClass.getFilters(r.Query);
 
 
             int id = 0;
             int.TryParse(Request.Query["id"], out id);
 
-          
-            var lista = await hdcontext.Pliki.Where(a=>a.IdZdarzenia==id).ToListAsync();
 
+            string query = "select id, id_zdarzenia, nazwa, typ, null as dane, sysdate, status  from rejestr_bwip.pliki where id_zdarzenia=" + id;
+            var lista = await hdcontext.Pliki.FromSql(query).ToListAsync();
+         
 
-            var res = new
-            {
-                TotalRows = hdcontext.Pliki.Where(a => a.IdZdarzenia==id).Count(),
-                Rows = lista
-            };
+            //var res = new
+            //{
+            //    TotalRows = hdcontext.Pliki.Where(a => a.IdZdarzenia==id).Count(),
+            //    Rows = lista
+            //};
 
-            var wynik = Json(res);
+            var wynik = Json(lista);
 
             return wynik;
 
@@ -432,7 +433,7 @@ namespace IASServices.Controllers
 
                 try
                 {
-                    Pliki newfile = new Pliki() { Nazwa = file.FileName, Typ = typ };
+                    Pliki newfile = new Pliki() { Nazwa = file.FileName, Typ = typ.Length>3?typ.Substring(0,3):typ };
 
                     using (MemoryStream ms = new MemoryStream())
                     {
