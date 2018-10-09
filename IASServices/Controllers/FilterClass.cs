@@ -134,6 +134,7 @@ namespace IASServices.Controllers
             }
             else
             {
+                //'equal', 'not equal', 'less than', 'less than or equal', 'greater than', 'greater than or equal', 'null', 'not null'
                 switch (condition.ToLower())
                 {
                     case "contains":
@@ -141,6 +142,29 @@ namespace IASServices.Controllers
                         break;
                     case "equal":
                         rez = " " + getFieldName(field, obiekt) + " = '" + value + "' ";
+                        break;
+                    case "less_than":
+                        rez = " " + getFieldName(field, obiekt) + " < '" + value + "' ";
+                        break;
+                     case "less_than_or_equal":
+                        rez = " " + getFieldName(field, obiekt) + " <= '" + value + "' ";
+                        break;
+                    case "greater_than":
+                        rez = " " + getFieldName(field, obiekt) + "  >'" + value + "' ";
+                        break;
+                    case "greater_than_or_ equal":
+                        rez = " " + getFieldName(field, obiekt) + "  >='" + value + "' ";
+                        break;
+                    case "null":
+                        rez = " " + getFieldName(field, obiekt) + "  is null ";
+                        break;
+                    case "not_null":
+                        rez = " " + getFieldName(field, obiekt) + "  is not null ";
+                        break;
+
+
+                    case "":
+                        rez = " " + getFieldName(field, obiekt) + "  '" + value + "' ";
                         break;
                 }
                 //rez = " " + getFieldName(field, obiekt) + " like '%" + value + "%' ";
