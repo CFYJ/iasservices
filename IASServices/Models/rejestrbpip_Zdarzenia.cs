@@ -16,10 +16,12 @@ namespace IASServices.Models
         public DateTime? DataWejscia { get; set; }
         [Column("data_wyjscia", TypeName = "datetime")]
         public DateTime? DataWyjscia { get; set; }
-        [Column("odpowiedz", TypeName = "varchar(max)")]
-        public string Odpowiedz { get; set; }
+        [Column("informacja", TypeName = "varchar(max)")]
+        public string Informacja { get; set; }
         [Column("sysdate", TypeName = "datetime")]
         public DateTime? Sysdate { get; set; }
-    
+        [Column("calkowita_kwota", TypeName = "datetime")]
+        public DateTime? CalkowitaKwota { get; set; }
+
     }
 }
