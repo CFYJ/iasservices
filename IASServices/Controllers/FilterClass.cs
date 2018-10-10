@@ -63,65 +63,143 @@ namespace IASServices.Controllers
 
             if (count > 0)
             {
-                var z = query.GetEnumerator();
 
-                //for (int i = 0; i < count; i++)
-                while(true)
+                #region stare
+                //var z = query.GetEnumerator();
+
+                //while (true)
+                //{
+
+                //    z.MoveNext();
+                //    string value = "";
+                //    string field = "";
+                //    string condition="";
+
+
+                //    if(!z.Current.Key.Contains("Group") && z.Current.Key.EndsWith("operator"))
+                //    {
+                //        while (z.MoveNext())
+                //        {
+                //            string key = z.Current.Key;
+                //            if (key.Contains("value"))
+                //                value = z.Current.Value;
+                //            if (key.Contains("field"))
+                //                field = z.Current.Value;
+                //            if (key.Contains("condition"))
+                //                condition= z.Current.Value;
+
+                //            if (value != "" && field != "" && condition != "")
+                //                break;
+
+                //        }
+
+                //        rez += " and " + generateCondition(field, value, condition, lista, obiekt);
+                //        count--;
+
+                //        if (count <= 0)
+                //            break;
+                //    }
+
+                //}
+
+                #endregion
+
+                rez += " and (";
+
+                string tmpdatafield = "";
+                string tmpfilteroperator = "";
+		
+                for (int i=0; i < count; i++)
                 {
-                    z.MoveNext();
+                    string filtervalue = query["filtervalue" + i];
+                    string filtercondition = query["filtercondition" + i];
+                    string filterdatafield = getFieldName(query["filterdatafield" + i], obiekt);
+                    string filteroperator = query["filteroperator" + i];
+                  
 
-                    string value = "";
-                    string field = "";
-                    string condition="";
-                    
-
-                    if(!z.Current.Key.Contains("Group") && z.Current.Key.EndsWith("operator"))
+                    if (tmpdatafield == "")
+                        tmpdatafield = filterdatafield;
+                    else if (tmpdatafield != filterdatafield)
+                       rez += " ) AND (";
+                    else if (tmpdatafield == filterdatafield)
                     {
-                        while (true)
-                        {
-                            string key = z.Current.Key;
-                            if (key.Contains("value"))
-                                value = z.Current.Value;
-                            if (key.Contains("field"))
-                                field = z.Current.Value;
-                            if (key.Contains("condition"))
-                                condition= z.Current.Value;
-
-                            if (value != "" && field != "" && condition != "")
-                                break;
-                            z.MoveNext();
-                        }
-
-                        rez += " and " + generateCondition(field, value, condition, lista, obiekt);
-                        count--;
-
-                        if (count == 0)
-                            break;
+                        if (tmpfilteroperator == "0")
+                            rez += " AND ";
+                        else
+                            rez += " OR ";
                     }
 
+                    string condition = "";
+                    string value = "";
+                    switch (filtercondition)
+                    {
+                        case "CONTAINS":
+                            condition = " LIKE ";
+                            value = "'%" + filtervalue + "%'";
+                            break;
+                        case "DOES_NOT_CONTAIN":
+                            condition = " NOT LIKE ";
+                            value = "'%" + filtervalue + "%'";
+                            break;
+                        case "EQUAL":
+                            condition = " = ";
+                            value = "'" + filtervalue + "'";
+                            break;
+                        case "NOT_EQUAL":
+                            condition = " <> ";
+                            value = "'" + filtervalue + "'";
+                            break;
+                        case "GREATER_THAN":
+                            condition = " > ";
+                            value = "'" + filtervalue + "'";
+                            break;
+                        case "LESS_THAN":
+                            condition = " < ";
+                            value = "'" + filtervalue + "'";
+                            break;
+                        case "GREATER_THAN_OR_EQUAL":
+                            condition = " >= ";
+                            value = "'" + filtervalue + "'";
+                            break;
+                        case "LESS_THAN_OR_EQUAL":
+                            condition = " <= ";
+                            value = "'" + filtervalue + "'";
+                            break;
+                        case "STARTS_WITH":
+                            condition = " LIKE ";
+                            value = "'" + filtervalue + "%'";
+                            break;
+                        case "ENDS_WITH":
+                            condition = " LIKE ";
+                            value = "'%" + filtervalue + "'";
+                            break;
+                        case "NULL":
+                            condition = " IS NULL ";
+                            value = "";
+                            break;
+                        case "NOT_NULL":
+                            condition = " IS NOT NULL ";
+                            value = "";
+                            break;
+                    };
 
-                    //z.MoveNext();
-                    //while (!z.Current.Key.Contains("Group") && z.Current.Key.EndsWith("operator"))
-                    //    z.MoveNext();
-                    //if (z.Current.Key.EndsWith("operator"))
-                    //    z.MoveNext();
+                    rez += " " + filterdatafield + " " + condition + " "+value+" ";
 
-                    ////z.MoveNext();
-                    //string value = z.Current.Value;
-                    //z.MoveNext();
-                    //string condition = z.Current.Value;
-                    //z.MoveNext();
-                    //z.MoveNext();
-                    //string field = getFieldName(z.Current.Value, obiekt);
+                    if (i == count - 1)
+                        rez += " ) ";
 
+                    tmpfilteroperator = filteroperator;
+                    tmpdatafield = filterdatafield;
 
-                    //rez += " and " + generateCondition(field, value);
-                }
+            }
 
             }
 
             return rez;
         }
+
+
+
 
 
         private static string generateCondition(string field, string value, string condition, Dictionary<string, string> lista = null, Type obiekt = null)
@@ -152,7 +230,7 @@ namespace IASServices.Controllers
                     case "greater_than":
                         rez = " " + getFieldName(field, obiekt) + "  >'" + value + "' ";
                         break;
-                    case "greater_than_or_ equal":
+                    case "greater_than_or_equal":
                         rez = " " + getFieldName(field, obiekt) + "  >='" + value + "' ";
                         break;
                     case "null":
@@ -161,10 +239,11 @@ namespace IASServices.Controllers
                     case "not_null":
                         rez = " " + getFieldName(field, obiekt) + "  is not null ";
                         break;
-
-
                     case "":
                         rez = " " + getFieldName(field, obiekt) + "  '" + value + "' ";
+                        break;
+                    default:
+                        rez = "";
                         break;
                 }
                 //rez = " " + getFieldName(field, obiekt) + " like '%" + value + "%' ";
@@ -208,10 +287,12 @@ namespace IASServices.Controllers
 
         public static string getFieldName(string nazwa,Type obiekt)
         {
+
+
             string rez = nazwa;
             foreach (var prop in obiekt.GetProperties())
             {
-                if (prop.Name.ToString().ToUpper() == nazwa.ToString().ToUpper())
+                if (prop.Name.ToString().Trim().ToUpper() == nazwa.ToString().Trim().ToUpper())
                     if (prop.CustomAttributes.Count() > 0)
                     {
                         var t = (prop.GetCustomAttributes().First() as ColumnAttribute).TypeName;
