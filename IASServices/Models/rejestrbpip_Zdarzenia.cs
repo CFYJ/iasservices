@@ -20,8 +20,8 @@ namespace IASServices.Models
         public string Informacja { get; set; }
         [Column("sysdate", TypeName = "datetime")]
         public DateTime? Sysdate { get; set; }
-        [Column("calkowita_kwota", TypeName = "datetime")]
-        public DateTime? CalkowitaKwota { get; set; }
+        [Column("calkowita_kwota", TypeName = "string")]
+        public string CalkowitaKwota { get; set; }
 
     }
 }

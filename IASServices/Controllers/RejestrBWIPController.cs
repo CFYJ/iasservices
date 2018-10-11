@@ -105,7 +105,7 @@ namespace IASServices.Controllers
         public async Task<IActionResult> GetSprawyByID([FromRoute] string nrBwip)
         {
 
-            var lista = await hdcontext.Sprawy.Where(a=>a.NrBwip==nrBwip).ToListAsync();       
+            var lista = await hdcontext.Sprawy.Where(a=>a.NrBwip==nrBwip).FirstOrDefaultAsync();       
 
             var wynik = Json(lista);
 
@@ -160,7 +160,7 @@ namespace IASServices.Controllers
             {
                 return BadRequest(ModelState);
             }
-
+            sprawy.Sysdate = DateTime.Now;
             this.hdcontext.Sprawy.Add(sprawy);
             await hdcontext.SaveChangesAsync();
 
@@ -252,7 +252,7 @@ namespace IASServices.Controllers
             {
                 return BadRequest(ModelState);
             }
-
+            zdarzenia.Sysdate = DateTime.Now;
             this.hdcontext.Zdarzenia.Add(zdarzenia);
             await hdcontext.SaveChangesAsync();
 
@@ -395,7 +395,8 @@ namespace IASServices.Controllers
                     {
                         await file.CopyToAsync(ms);
                         newfile.Dane = ms.ToArray();
-
+                        newfile.Sysdate = DateTime.Now;
+                        newfile.Status = false;
 
                         hdcontext.Pliki.Add(newfile);
                         int newid = await hdcontext.SaveChangesAsync();
