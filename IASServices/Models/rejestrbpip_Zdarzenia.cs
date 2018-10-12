@@ -19,9 +19,9 @@ namespace IASServices.Models
         [Column("informacja", TypeName = "varchar(max)")]
         public string Informacja { get; set; }
         [Column("sysdate", TypeName = "datetime")]
-        public DateTime? Sysdate { get; set; }
-        [Column("calkowita_kwota", TypeName = "string")]
-        public string CalkowitaKwota { get; set; }
+        public DateTime? Sysdate { get; set; }      
+        [Column("calkowita_kwota", TypeName = "float")]
+        public double CalkowitaKwota { get; set; }
 
     }
 }

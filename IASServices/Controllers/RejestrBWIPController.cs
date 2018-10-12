@@ -100,6 +100,8 @@ namespace IASServices.Controllers
 
         }
 
+       
+
         [HttpGet("{nrBwip}")]
         [Authorize(Roles = "rejestr-bwip")]
         public async Task<IActionResult> GetSprawyByID([FromRoute] string nrBwip)
@@ -159,6 +161,10 @@ namespace IASServices.Controllers
             if (!ModelState.IsValid)
             {
                 return BadRequest(ModelState);
+            }
+            if(sprawy.DataPierwszegoWniosku != null)
+            {
+                sprawy.DataOstatniegoWniosku = sprawy.DataPierwszegoWniosku;
             }
             sprawy.Sysdate = DateTime.Now;
             this.hdcontext.Sprawy.Add(sprawy);
@@ -243,6 +249,25 @@ namespace IASServices.Controllers
 
         }
 
+        [HttpGet("{id}")]
+        //[Authorize(Roles = "rejestr-bwip")]
+        public async Task<IActionResult> GetZdarzenia([FromRoute] long id)
+        {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
+            var upowaznienia = await hdcontext.Zdarzenia.SingleOrDefaultAsync(m => m.Id == id);
+
+            if (upowaznienia == null)
+            {
+                return NotFound();
+            }
+
+            return Ok(upowaznienia);
+        }
+
         [HttpPost]
         [Authorize(Roles = "rejestr-bwip,rejestr-bwip-edycja")]
         public async Task<IActionResult> AddZdarzenia([FromBody] Zdarzenia zdarzenia)
@@ -255,22 +280,16 @@ namespace IASServices.Controllers
             zdarzenia.Sysdate = DateTime.Now;
             this.hdcontext.Zdarzenia.Add(zdarzenia);
 
-
-
             await hdcontext.SaveChangesAsync();
 
+            var spr = await hdcontext.Sprawy.Where(s => s.Id == zdarzenia.IdSprawy).FirstOrDefaultAsync();
             if (zdarzenia.DataWejscia != null)
-            {
-                var spr = await hdcontext.Sprawy.Where(s => s.Id == zdarzenia.IdSprawy).FirstOrDefaultAsync();
-                if (zdarzenia.DataWejscia > spr.DataOstatniegoWniosku || spr.DataOstatniegoWniosku == null)
-                {
+                if (zdarzenia.DataWejscia > spr.DataOstatniegoWniosku || spr.DataOstatniegoWniosku == null)                
                     spr.DataOstatniegoWniosku = zdarzenia.DataWejscia;
-                    hdcontext.Entry(spr).State = EntityState.Modified;
-                    await hdcontext.SaveChangesAsync();
-                }
-            }
-
-
+                
+            spr.CalkowitaKwota = zdarzenia.CalkowitaKwota;
+            hdcontext.Entry(spr).State = EntityState.Modified;
+            await hdcontext.SaveChangesAsync();
 
             return CreatedAtAction("GetZdarzenia", new { id = zdarzenia.Id }, zdarzenia);
         }

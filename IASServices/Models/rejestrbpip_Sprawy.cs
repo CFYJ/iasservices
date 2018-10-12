@@ -33,8 +33,8 @@ namespace IASServices.Models
         public string NrBwip { get; set; }
         [Column("nr_szd", TypeName = "varchar(50)")]
         public string NrSzd { get; set; }
-        [Column("calkowita_kwota", TypeName = "varchar(50)")]
-        public string CalkowitaKwota { get; set; }
+        [Column("calkowita_kwota", TypeName = "float")]
+        public double CalkowitaKwota { get; set; }
 
         [Column("status", TypeName = "bit")]
         public bool? Status { get; set; }
