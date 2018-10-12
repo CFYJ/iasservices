@@ -254,7 +254,23 @@ namespace IASServices.Controllers
             }
             zdarzenia.Sysdate = DateTime.Now;
             this.hdcontext.Zdarzenia.Add(zdarzenia);
+
+         
+
             await hdcontext.SaveChangesAsync();
+
+            if (zdarzenia.DataWejscia != null)
+            {
+                var spr = await hdcontext.Sprawy.Where(s => s.Id == zdarzenia.IdSprawy).FirstOrDefaultAsync();
+                if (zdarzenia.DataWejscia > spr.DataOstatniegoWniosku || spr.DataOstatniegoWniosku==null)
+                {
+                    spr.DataOstatniegoWniosku = zdarzenia.DataWejscia;
+                    hdcontext.Entry(spr).State = EntityState.Modified;
+                    await hdcontext.SaveChangesAsync();
+                }
+            }
+           
+
 
             return CreatedAtAction("GetZdarzenia", new { id = zdarzenia.Id }, zdarzenia);
         }
