@@ -46,9 +46,9 @@ namespace IASServices.Controllers
             int.TryParse(r.Query["filterscount"], out filterscount);
 
 
-            string sortorder = (r.Query.Where(a => a.Key == "sortorder").Count() > 0) ?FilterClass.getSortCondition(r.Query,(typeof(Sprawy))) : " ORDER BY id desc";
+            string sortorder = (r.Query.Where(a => a.Key == "sortorder").Count() > 0) ? FilterClass.getSortCondition(r.Query, (typeof(Sprawy))) : " ORDER BY id desc";
 
-     
+
             #region stare metody wyci¹gajace nazwê kolumny z bazy
             //if (r.Query["sortorder"] != "")
             //    foreach (var prop in hdcontext.Model.FindEntityType(typeof(Sprawy)).GetProperties())
@@ -73,7 +73,7 @@ namespace IASServices.Controllers
             #endregion
 
 
-            int startrow = recordstartindex+1;
+            int startrow = recordstartindex + 1;
             int endrow = recordstartindex + pagesize;
 
 
@@ -105,7 +105,7 @@ namespace IASServices.Controllers
         public async Task<IActionResult> GetSprawyByID([FromRoute] string nrBwip)
         {
 
-            var lista = await hdcontext.Sprawy.Where(a=>a.NrBwip==nrBwip).FirstOrDefaultAsync();       
+            var lista = await hdcontext.Sprawy.Where(a => a.NrBwip == nrBwip).FirstOrDefaultAsync();
 
             var wynik = Json(lista);
 
@@ -116,7 +116,7 @@ namespace IASServices.Controllers
 
 
         [HttpPut("{id}")]
-        [Authorize(Roles = "rejestr-bwip")]
+        [Authorize(Roles = "rejestr-bwip,rejestr-bwip-edycja")]
         public async Task<IActionResult> UpdateSprawy([FromRoute] long id, [FromBody] Sprawy sprawy)
         {
             if (!ModelState.IsValid)
@@ -152,7 +152,7 @@ namespace IASServices.Controllers
         }
 
         [HttpPost]
-        [Authorize(Roles = "rejestr-bwip")]
+        [Authorize(Roles = "rejestr-bwip,rejestr-bwip-edycja")]
         public async Task<IActionResult> AddSprawy([FromBody] Sprawy sprawy)
         {
             var z = Request;
@@ -169,7 +169,7 @@ namespace IASServices.Controllers
 
 
         [HttpPost("{id}")]
-        [Authorize(Roles = "rejestr-bwip")]
+        [Authorize(Roles = "rejestr-bwip,rejestr-bwip-edycja")]
         public async Task<IActionResult> DeleteSprawy([FromRoute] long id)
         {
             if (!ModelState.IsValid)
@@ -210,7 +210,7 @@ namespace IASServices.Controllers
             int.TryParse(r.Query["pagenum"], out pagenum);
             int.TryParse(r.Query["recordstartindex"], out recordstartindex);
 
-            int startrow = recordstartindex+1;
+            int startrow = recordstartindex + 1;
             int endrow = recordstartindex + pagesize;
 
             int id = 0;
@@ -218,13 +218,13 @@ namespace IASServices.Controllers
 
             string sortorder = (r.Query.Where(a => a.Key == "sortorder").Count() > 0) ? FilterClass.getSortCondition(r.Query, (typeof(Zdarzenia))) : " ORDER BY id desc";
 
-            string conditions = FilterClass.generateQueryCondition(r.Query, null, typeof(Zdarzenia)) +" and id_sprawy="+id.ToString();
+            string conditions = FilterClass.generateQueryCondition(r.Query, null, typeof(Zdarzenia)) + " and id_sprawy=" + id.ToString();
 
 
 
             string query = "select * from(" +
                 "select * from(" +
-                "select * ,ROW_NUMBER() OVER("+sortorder+") AS Row from rejestr_bwip.zdarzenia" + conditions +
+                "select * ,ROW_NUMBER() OVER(" + sortorder + ") AS Row from rejestr_bwip.zdarzenia" + conditions +
                 ") as p1 where row between " + startrow + " and " + endrow +
                 ")as zz " + sortorder;
             var lista = await hdcontext.Zdarzenia.FromSql(query).ToListAsync();
@@ -244,7 +244,7 @@ namespace IASServices.Controllers
         }
 
         [HttpPost]
-        [Authorize(Roles = "rejestr-bwip")]
+        [Authorize(Roles = "rejestr-bwip,rejestr-bwip-edycja")]
         public async Task<IActionResult> AddZdarzenia([FromBody] Zdarzenia zdarzenia)
         {
             var z = Request;
@@ -255,28 +255,28 @@ namespace IASServices.Controllers
             zdarzenia.Sysdate = DateTime.Now;
             this.hdcontext.Zdarzenia.Add(zdarzenia);
 
-         
+
 
             await hdcontext.SaveChangesAsync();
 
             if (zdarzenia.DataWejscia != null)
             {
                 var spr = await hdcontext.Sprawy.Where(s => s.Id == zdarzenia.IdSprawy).FirstOrDefaultAsync();
-                if (zdarzenia.DataWejscia > spr.DataOstatniegoWniosku || spr.DataOstatniegoWniosku==null)
+                if (zdarzenia.DataWejscia > spr.DataOstatniegoWniosku || spr.DataOstatniegoWniosku == null)
                 {
                     spr.DataOstatniegoWniosku = zdarzenia.DataWejscia;
                     hdcontext.Entry(spr).State = EntityState.Modified;
                     await hdcontext.SaveChangesAsync();
                 }
             }
-           
+
 
 
             return CreatedAtAction("GetZdarzenia", new { id = zdarzenia.Id }, zdarzenia);
         }
 
         [HttpPut("{id}")]
-        [Authorize(Roles = "rejestr-bwip")]
+        [Authorize(Roles = "rejestr-bwip,rejestr-bwip-edycja")]
         public async Task<IActionResult> UpdateZdarzenia([FromRoute] long id, [FromBody] Zdarzenia zdarzenia)
         {
             if (!ModelState.IsValid)
@@ -288,7 +288,7 @@ namespace IASServices.Controllers
             {
                 return BadRequest();
             }
-     
+
 
 
 
@@ -314,7 +314,7 @@ namespace IASServices.Controllers
         }
 
         [HttpPost("{id}")]
-        [Authorize(Roles = "rejestr-bwip")]
+        [Authorize(Roles = "rejestr-bwip,rejestr-bwip-edycja")]
         public async Task<IActionResult> DeleteZdarzenia([FromRoute] long id)
         {
             if (!ModelState.IsValid)
@@ -324,9 +324,9 @@ namespace IASServices.Controllers
 
             // _context.Database.SqlQuery("df");
             var zdarzenia = await hdcontext.Zdarzenia.SingleOrDefaultAsync(m => m.Id == id);
-            if (zdarzenia == null)            
+            if (zdarzenia == null)
                 return NotFound();
-            
+
 
             hdcontext.Zdarzenia.Remove(zdarzenia);
             await hdcontext.SaveChangesAsync();
@@ -335,7 +335,7 @@ namespace IASServices.Controllers
         }
 
 
-        private bool ZdarzeniaExists(long id)=> hdcontext.Zdarzenia.Any(e => e.Id == id);
+        private bool ZdarzeniaExists(long id) => hdcontext.Zdarzenia.Any(e => e.Id == id);
 
         #endregion
 
@@ -343,7 +343,7 @@ namespace IASServices.Controllers
         #region pliki
 
         [HttpGet]
-        [Authorize(Roles = "rejestr-bwip")]
+        [Authorize(Roles = "rejestr-bwip,rejestr-bwip-edycja")]
         public async Task<IActionResult> GetPliki()
         {
             var r = Request;
@@ -368,7 +368,7 @@ namespace IASServices.Controllers
 
             string query = "select id, id_zdarzenia, nazwa, typ, null as dane, sysdate, status  from rejestr_bwip.pliki where id_zdarzenia=" + id;
             var lista = await hdcontext.Pliki.FromSql(query).ToListAsync();
-         
+
 
             //var res = new
             //{
@@ -385,11 +385,11 @@ namespace IASServices.Controllers
 
 
         [HttpPost]
-        [Authorize(Roles = "rejestr-bwip")]
+        [Authorize(Roles = "rejestr-bwip,rejestr-bwip-edycja")]
         public async Task<IActionResult> AddPliki(IList<IFormFile> filess)
         {
 
-            var files = Request.Form.Files;       
+            var files = Request.Form.Files;
 
             foreach (IFormFile file in files)
             {
@@ -431,15 +431,13 @@ namespace IASServices.Controllers
 
 
         [HttpPost("{id}")]
-        [Authorize(Roles = "rejestr-bwip")]
+        [Authorize(Roles = "rejestr-bwip,rejestr-bwip-edycja")]
         public async Task<IActionResult> UploadPliki([FromRoute] long id, IList<IFormFile> filess)
         {
             var files = Request.Form.Files;
 
             foreach (IFormFile file in files)
             {
-
-
                 if (file == null || file.Length == 0)
                     return Content("file not selected");
 
@@ -450,12 +448,14 @@ namespace IASServices.Controllers
 
                 try
                 {
-                    Pliki newfile = new Pliki() { Nazwa = file.FileName, Typ = typ.Length>3?typ.Substring(0,3):typ };
+                    Pliki newfile = new Pliki() { Nazwa = file.FileName, Typ = typ.Length > 3 ? typ.Substring(0, 3) : typ };
 
                     using (MemoryStream ms = new MemoryStream())
                     {
                         await file.CopyToAsync(ms);
                         newfile.Dane = ms.ToArray();
+                        newfile.Sysdate = DateTime.Now;
+                        newfile.Status = true;
 
                         newfile.IdZdarzenia = id;
                         hdcontext.Pliki.Add(newfile);
@@ -475,7 +475,7 @@ namespace IASServices.Controllers
         }
 
         [HttpPut("{id}")]
-        [Authorize(Roles = "rejestr-bwip")]
+        [Authorize(Roles = "rejestr-bwip,rejestr-bwip-edycja")]
         public async Task<IActionResult> UpdatePliki([FromRoute] long id, [FromBody] Pliki pliki)
         {
             if (!ModelState.IsValid)
@@ -487,6 +487,7 @@ namespace IASServices.Controllers
             {
                 return BadRequest();
             }
+            pliki.Status = true;
             hdcontext.Entry(pliki).State = EntityState.Modified;
 
             try
@@ -511,7 +512,7 @@ namespace IASServices.Controllers
         private bool PlikiExists(long id) => hdcontext.Pliki.Any(e => e.Id == id);
 
         [HttpPost("{id}")]
-        [Authorize(Roles = "rejestr-bwip")]
+        [Authorize(Roles = "rejestr-bwip,rejestr-bwip-edycja")]
         public async Task<IActionResult> DeletePliki([FromRoute] long id)
         {
             if (!ModelState.IsValid)
@@ -532,6 +533,7 @@ namespace IASServices.Controllers
         }
 
         [HttpGet("{id}")]
+        [Authorize(Roles = "rejestr-bwip")]
         public void DownloadPliki([FromRoute] string id)
         {
             try
@@ -546,95 +548,7 @@ namespace IASServices.Controllers
             catch (Exception ex) { Response.StatusCode = 500; }
         }
 
-
-        //[HttpGet("{id}")]
-        //public FileResult DownloadPliki([FromRoute] string id)
-        //{
-
-        //    Pliki file = hdcontext.Pliki.Where(f => f.Id == long.Parse(id)).First();
-
-        //    try
-        //    {
-        //        byte[] fileBytes = file.Dane; 
-
-        //        return File(fileBytes, System.Net.Mime.MediaTypeNames.Application.Octet, file.Nazwa);
-        //    }
-        //    catch (Exception ex) { return null; };
-        //}
-
-
-
-        //[HttpGet("{id}")]
-        //[Authorize(Roles = "rejestr-bwip")]
-        //public IActionResult DownloadPliki([FromRoute] string id)
-        //{
-        //    try
-        //    {
-        //        Pliki file = hdcontext.Pliki.Where(f => f.Id == long.Parse(id)).First();
-
-        //        return new FileStreamResult(new MemoryStream(file.Dane), "application/" + file.Typ);
-        //    }
-        //    catch (Exception ex)  { return null; }
-        //}
-
-
         #endregion
 
-
-
-
-
-
-
-
-
-        //[HttpPost]
-        //[Authorize(Roles = "rejestr-bwip")]
-        //public async Task<IActionResult> FileUpload(IList<IFormFile> filess)
-        //{//IFormFile file
-        // //IList<IFormFile> files
-        // //[FromBody]  IFormFile fil
-        //    var files = Request.Form.Files;
-
-        //    string filePath = ConfigurationManager.AppSettings.Get("filesCatalogPath");
-
-        //    foreach (IFormFile file in files)
-        //    {
-
-
-        //        if (file == null || file.Length == 0)
-        //            return Content("file not selected");
-
-        //        string vFileId = DateTime.Now.Ticks.ToString();
-
-        //        var path = Path.Combine(
-        //                    filePath,
-        //                    vFileId);
-
-        //        try
-        //        {
-        //            using (var stream = new FileStream(path, FileMode.Create))
-        //            {
-        //                await file.CopyToAsync(stream);
-        //            }
-        //            UpowaznieniaPliki plik = new UpowaznieniaPliki() { IdPliku = vFileId, Nazwa = file.FileName };
-        //            _context.UpowaznieniaPliki.Add(plik);
-        //            int newid = await _context.SaveChangesAsync();
-
-        //            return CreatedAtAction("GetPliki", new { id = plik.Id }, plik);
-
-        //        }
-        //        catch (Exception ex) { return BadRequest(); }
-
-        //    }
-
-        //    // return RedirectToAction("Files");
-
-        //    return Ok("true");
-        //}
-
     }
-
-
-
 }
