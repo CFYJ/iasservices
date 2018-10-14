@@ -14,6 +14,7 @@ using System.Configuration;
 using System.IO;
 
 using System.ComponentModel.DataAnnotations.Schema;
+using System.Data.SqlClient;
 
 namespace IASServices.Controllers
 {
@@ -560,15 +561,22 @@ namespace IASServices.Controllers
             }
 
             // _context.Database.SqlQuery("df");
-            var pliki = await hdcontext.Pliki.SingleOrDefaultAsync(m => m.Id == id);
-            if (pliki == null)
-                return NotFound();
 
 
-            hdcontext.Pliki.Remove(pliki);
-            await hdcontext.SaveChangesAsync();
+            //var pliki = await hdcontext.Pliki.SingleOrDefaultAsync(m => m.Id == id);
+            //if (pliki == null)
+            //    return NotFound();
 
-            return Ok(pliki);
+
+            //hdcontext.Pliki.Remove(pliki);
+            //await hdcontext.SaveChangesAsync();
+
+            //return Ok(pliki);
+
+            hdcontext.Database.ExecuteSqlCommand("delete from rejestr_bwip.pliki where id=@ID", new SqlParameter("@ID", id));
+
+            return Ok("true");
+
         }
 
         [HttpGet("{id}")]
