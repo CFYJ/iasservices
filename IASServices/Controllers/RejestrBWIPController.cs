@@ -116,6 +116,22 @@ namespace IASServices.Controllers
 
         }
 
+        [HttpGet]
+        [Authorize(Roles = "rejestr-bwip")]
+        public async Task<IActionResult> GetSprawyStare()
+        {
+
+            var lista = await hdcontext.Sprawy.Where(a => a.DataOstatniegoWniosku< DateTime.Now.AddMonths(-6)).CountAsync();
+
+            var wynik = Json(lista);
+
+            return wynik;
+
+
+        }
+
+
+
 
         [HttpPut("{id}")]
         [Authorize(Roles = "rejestr-bwip,rejestr-bwip-edycja")]
@@ -150,6 +166,7 @@ namespace IASServices.Controllers
                 }
             }
 
+            //return Ok(sprawy);
             return NoContent();
         }
 
@@ -198,6 +215,8 @@ namespace IASServices.Controllers
 
         private bool SprawyExists(long id)
        => hdcontext.Sprawy.Any(e => e.Id == id);
+
+
 
         #endregion
 
@@ -330,6 +349,7 @@ namespace IASServices.Controllers
             }
 
             return NoContent();
+            //return Ok(zdarzenia);
         }
 
         [HttpPost("{id}")]
