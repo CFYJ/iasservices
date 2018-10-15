@@ -336,6 +336,18 @@ namespace IASServices.Controllers
             try
             {
                 await hdcontext.SaveChangesAsync();
+
+
+
+                var spr = await hdcontext.Sprawy.Where(s => s.Id == zdarzenia.IdSprawy).FirstOrDefaultAsync();
+                if (zdarzenia.DataWejscia != null)
+                    if (zdarzenia.DataWejscia > spr.DataOstatniegoWniosku || spr.DataOstatniegoWniosku == null)
+                    {
+                        spr.DataOstatniegoWniosku = zdarzenia.DataWejscia;
+                        hdcontext.Entry(spr).State = EntityState.Modified;
+                        await hdcontext.SaveChangesAsync();
+                    }
+
             }
             catch (DbUpdateConcurrencyException)
             {
@@ -370,6 +382,8 @@ namespace IASServices.Controllers
 
             hdcontext.Zdarzenia.Remove(zdarzenia);
             await hdcontext.SaveChangesAsync();
+
+
 
             return Ok(zdarzenia);
         }
@@ -406,7 +420,7 @@ namespace IASServices.Controllers
             int.TryParse(Request.Query["id"], out id);
 
 
-            string query = "select id, id_zdarzenia, nazwa, typ, null as dane, sysdate, status  from rejestr_bwip.pliki where id_zdarzenia=" + id;
+            string query = "select id, id_zdarzenia, nazwa, typ, null as dane, sysdate, status  from rejestr_bwip.pliki where id_zdarzenia=" + id+" order by id desc";
             var lista = await hdcontext.Pliki.FromSql(query).ToListAsync();
 
 
@@ -505,7 +519,9 @@ namespace IASServices.Controllers
                     return CreatedAtAction("GetPliki", new { id = newfile.Id }, newfile);
 
                 }
-                catch (Exception ex) { return BadRequest(); }
+                catch (Exception ex) {
+                    return BadRequest();
+                }
 
             }
 
