@@ -40,12 +40,13 @@ namespace IASServices.Controllers
             var rez = JsonWebToken.Decode(Request.Headers["Authorization"], "VeryCompl!c@teSecretKey", false);
 
             int pagesize, pagenum, recordstartindex, filterscount = 0;
+           // bool ispageable = true;
 
             int.TryParse(r.Query["pagesize"], out pagesize);
             int.TryParse(r.Query["pagenum"], out pagenum);
             int.TryParse(r.Query["recordstartindex"], out recordstartindex);
             int.TryParse(r.Query["filterscount"], out filterscount);
-
+           // bool.TryParse(r.Query["ispageable"], out ispageable);
 
             string sortorder = (r.Query.Where(a => a.Key == "sortorder").Count() > 0) ? FilterClass.getSortCondition(r.Query, (typeof(Sprawy))) : " ORDER BY id desc";
 
@@ -85,6 +86,9 @@ namespace IASServices.Controllers
                 "select * ,ROW_NUMBER() OVER(" + sortorder + ") AS Row from rejestr_bwip.sprawy" + conditions +
                 ") as p1 where row between " + startrow + " and " + endrow +
                 ")as zz " + sortorder;
+            //if (!ispageable)
+            //    query = "select * from rejestr_bwip.sprawy" + conditions + " " + sortorder;
+
             var lista = await hdcontext.Sprawy.FromSql(query).ToListAsync();
 
 
@@ -107,7 +111,7 @@ namespace IASServices.Controllers
         [Authorize(Roles = "rejestr-bwip")]
         public async Task<IActionResult> GetSprawyByID([FromRoute] string nrBwip)
         {
-
+            nrBwip = Uri.UnescapeDataString(nrBwip);
             var lista = await hdcontext.Sprawy.Where(a => a.NrBwip == nrBwip).FirstOrDefaultAsync();
 
             var wynik = Json(lista);
