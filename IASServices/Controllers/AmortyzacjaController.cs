@@ -8,6 +8,7 @@ using System.IO;
 using Microsoft.AspNetCore.Http;
 using JWT;
 using Microsoft.AspNetCore.Authorization;
+using System.Configuration;
 
 namespace IASServices.Controllers
 {
@@ -17,9 +18,10 @@ namespace IASServices.Controllers
     {
 
         [HttpGet]
-        [Authorize(Roles = "amortyzacja")]
+        [Authorize(Roles = "dofinansowaniepops")]
         public async Task<IActionResult> GetRows()
         {
+            string filePath = ConfigurationManager.AppSettings.Get("daneAmortyzacji");
 
             var r = Request;
             var rez =  JsonWebToken.Decode(Request.Headers["Authorization"], "VeryCompl!c@teSecretKey", false);
@@ -31,11 +33,11 @@ namespace IASServices.Controllers
 
             Amort warunek = new Amort().getFilters(r.Query);
 
-            var reader = new StreamReader("./amortyzacja.csv");
+            var reader = new StreamReader(filePath);
             var csv = new CsvReader(reader);
             var records = csv.GetRecords<Amort>();
 
-            var readeril = new StreamReader("./amortyzacja.csv");
+            var readeril = new StreamReader(filePath);
             var csvil = new CsvReader(readeril);
             var recordsil = csvil.GetRecords<Amort>();
 
